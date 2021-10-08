@@ -9,7 +9,8 @@
         "name": "library"
       },
       {
-        "name": "server"
+        "name": "server",
+        "entrances": true
       }
     ]
   }
