@@ -12,6 +12,7 @@
     "test": "yarn lint-prettier && yarn build && yarn lint"
   },
   "dependencies": {
+    "entrance-decorator": "^0.1.1",
     "tslib": "^2.3.1"
   },
   "devDependencies": {
