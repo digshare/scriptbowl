@@ -33,7 +33,7 @@ export class ScriptBowl {
         let {resolve, reject} = this.resolverMap.get(id)!;
 
         if (error) {
-          return reject(error);
+          return reject(new Error(error));
         }
 
         resolve(data);
@@ -45,22 +45,51 @@ export class ScriptBowl {
     this.ws = ws;
   }
 
-  async create(document: ScriptDocument): Promise<Script> {
-    let id = uniqueId();
-    await this.request('create', document);
-    return new Script(id);
+  async create(
+    document: Omit<ScriptDocument, 'id' | 'token'>,
+  ): Promise<Script> {
+    let script = await this.request<ScriptDocument>({
+      type: 'create',
+      data: document,
+    });
+
+    return new Script(script, this.request);
   }
 
   async get(id: string): Promise<Script | undefined> {
-    await this.request('get', {id});
-    return new Script(id);
+    let script = await this.request<ScriptDocument | undefined>({
+      id,
+      type: 'get',
+      data: {
+        id,
+      },
+    });
+    return script && new Script(script, this.request);
   }
 
-  private async request(type: string, data: any): Promise<void> {
+  async require(id: string): Promise<Script> {
+    let script = await this.get(id);
+
+    if (!script) {
+      throw Error('Not found script');
+    }
+
+    return script;
+  }
+
+  private request = <T>({
+    id,
+    type,
+    data,
+  }: {
+    id?: string;
+    type: string;
+    data: any;
+  }): Promise<T> => {
     return this.ready.then(
       () =>
         new Promise((resolve, reject) => {
-          let id = uniqueId();
+          id ||= uniqueId();
           this.resolverMap.set(id, {resolve, reject});
           this.ws.send(
             JSON.stringify({
@@ -71,5 +100,5 @@ export class ScriptBowl {
           );
         }),
     );
-  }
+  };
 }

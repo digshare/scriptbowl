@@ -1,18 +1,27 @@
-import {Collection, OptionalId} from 'mongodb';
+import {Collection, ObjectId} from 'mongodb';
 
 import {DBService} from './db';
 
 export interface ScriptDocument {
-  _id: string;
+  _id: ObjectId;
   content: string;
   cron: string | undefined;
   timeout: number | undefined;
-  disable: boolean;
   lastExecutedAt: number | undefined;
+  disable: boolean;
   /**
    * equal webhook path
    */
   token: string;
+}
+
+export interface ScriptClientDocument {
+  id: string;
+  content: string;
+  token: string;
+  cron?: string;
+  timeout?: number;
+  disable?: boolean;
 }
 
 export class ScriptService {
@@ -22,31 +31,65 @@ export class ScriptService {
 
   constructor(private db: DBService) {}
 
-  async get(id: string): Promise<ScriptDocument | undefined> {
-    let document = await this.collection.findOne({_id: id});
+  async get(id: string): Promise<ScriptClientDocument | undefined> {
+    let document = await this.collection.findOne({_id: new ObjectId(id)});
+
+    return document ? coverScriptDocument(document) : undefined;
+  }
+
+  async match(token: string): Promise<ScriptDocument | undefined> {
+    let document = await this.collection.findOne({token});
 
     return document || undefined;
   }
 
-  async create(document: OptionalId<ScriptDocument>): Promise<string> {
-    let {insertedId} = await this.collection.insertOne(document);
+  async create(
+    document: Omit<ScriptDocument, '_id'>,
+  ): Promise<ScriptClientDocument> {
+    let {insertedId} = await this.collection.insertOne(
+      document as unknown as ScriptDocument,
+    );
 
-    console.log(insertedId);
-    return insertedId;
+    return coverScriptDocument({...document, _id: insertedId});
   }
 
-  async update(document: ScriptDocument): Promise<boolean> {
+  async update(
+    id: string,
+    document: Partial<ScriptDocument>,
+  ): Promise<boolean> {
     let {matchedCount} = await this.collection.updateOne(
-      {_id: document._id},
-      document,
+      {_id: new ObjectId(id)},
+      {
+        $set: document,
+      },
     );
 
     return !!matchedCount;
   }
 
   async delete(id: string): Promise<boolean> {
-    let {deletedCount} = await this.collection.deleteOne({_id: id});
+    let {deletedCount} = await this.collection.deleteOne({
+      _id: new ObjectId(id),
+    });
 
     return !!deletedCount;
   }
+}
+
+function coverScriptDocument({
+  _id,
+  content,
+  token,
+  cron,
+  timeout,
+  disable,
+}: ScriptDocument): ScriptClientDocument {
+  return {
+    id: _id.toHexString(),
+    content,
+    cron,
+    timeout,
+    disable,
+    token,
+  };
 }

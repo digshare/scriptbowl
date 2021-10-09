@@ -1,3 +1,7 @@
-export async function get(document: any): Promise<void> {
-  console.log(document);
+import {APIContext, ScriptClientDocument} from '../services';
+
+export async function get(
+  this: APIContext,
+): Promise<ScriptClientDocument | undefined> {
+  return this.scriptServices.get(this.id);
 }

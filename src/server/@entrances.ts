@@ -41,7 +41,7 @@ export class Entrances {
 
   @entrance
   get apiService() {
-    return new APIService(this.socketService);
+    return new APIService(this.socketService, this.scriptService);
   }
 
   @entrance
