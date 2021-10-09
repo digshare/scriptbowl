@@ -1,3 +1,4 @@
+import {parseNextTime} from '../@utils';
 import {APIContext} from '../services';
 
 export async function update(
@@ -16,7 +17,11 @@ export async function update(
 ): Promise<boolean> {
   return this.scriptServices.update(this.id, {
     ...(content !== undefined ? {content} : {}),
-    ...(cron !== undefined ? {cron} : {}),
+    ...(cron !== undefined
+      ? {cron, nextExecuteAt: parseNextTime(cron)}
+      : {
+          nextExecuteAt: undefined,
+        }),
     ...(timeout !== undefined ? {timeout} : {}),
     ...(disable !== undefined ? {disable} : {}),
   });

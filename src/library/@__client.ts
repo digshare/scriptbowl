@@ -2,32 +2,47 @@ import {ScriptBowl} from './bowl';
 
 (async () => {
   const scriptBowl = new ScriptBowl('ws://localhost:8080');
-
-  let script = await scriptBowl.create({
-    content: 'foo',
+  await scriptBowl.create({
+    cron: '*/2 * * * *',
+    content: 'ε=ε=ε=(~￣▽￣)~ 两分钟一次',
   });
 
-  let id = script.id;
+  // let script = await scriptBowl.create({
+  //   content: 'foo',
+  // });
 
-  console.assert(typeof id === 'string');
+  // let id = script.id;
 
-  await script.update({content: 'bar'});
+  // console.assert(typeof id === 'string');
 
-  await script.disable();
+  // await script.update({content: 'bar'});
 
-  await script.run();
+  // await script.disable();
 
-  await script.enable();
+  // await script.run();
 
-  script = await scriptBowl.require(id);
+  // await script.enable();
 
-  await script.run();
+  // script = await scriptBowl.require(id);
 
-  await script.remove();
+  // await script.run();
 
-  console.assert(!(await scriptBowl.get(id)));
+  // await script.remove();
 
-  script = await scriptBowl.create({
-    content: 'foo',
-  });
+  // console.assert(!(await scriptBowl.get(id)));
+
+  // Promise.all(
+  //   Array(10)
+  //     .fill(undefined)
+  //     .map(() =>
+  //       scriptBowl.create({
+  //         cron: '*/1 * * * *',
+  //         content: 'foo',
+  //       }),
+  //     ),
+  // )
+  //   .then(scripts => scripts.map((script, index) => script.run(index)))
+  //   .finally(() => {});
+
+  console.log('okey');
 })().catch(console.error);

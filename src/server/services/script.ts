@@ -1,13 +1,14 @@
 import {Collection, ObjectId} from 'mongodb';
 
 import {DBService} from './db';
+import {ScriptQueueService} from './queues';
 
 export interface ScriptDocument {
   _id: ObjectId;
   content: string;
   cron: string | undefined;
   timeout: number | undefined;
-  lastExecutedAt: number | undefined;
+  nextExecuteAt: number | undefined;
   disable: boolean;
   /**
    * equal webhook path
@@ -26,10 +27,13 @@ export interface ScriptClientDocument {
 
 export class ScriptService {
   get collection(): Collection<ScriptDocument> {
-    return this.db.collection<ScriptDocument>('scripts');
+    return this.dbService.collection<ScriptDocument>('scripts');
   }
 
-  constructor(private db: DBService) {}
+  constructor(
+    private dbService: DBService,
+    private scriptQueueService: ScriptQueueService,
+  ) {}
 
   async get(id: string): Promise<ScriptClientDocument | undefined> {
     let document = await this.collection.findOne({_id: new ObjectId(id)});
@@ -73,6 +77,10 @@ export class ScriptService {
     });
 
     return !!deletedCount;
+  }
+
+  async run(script: ScriptDocument, payload?: any): Promise<void> {
+    await this.scriptQueueService.addJob({script, payload});
   }
 }
 

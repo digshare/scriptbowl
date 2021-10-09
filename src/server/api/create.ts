@@ -1,5 +1,6 @@
 import {nanoid} from 'nanoid';
 
+import {parseNextTime} from '../@utils';
 import {APIContext, ScriptClientDocument} from '../services';
 
 export async function create(
@@ -16,12 +17,18 @@ export async function create(
     disable?: boolean;
   },
 ): Promise<ScriptClientDocument> {
+  let nextExecuteAt: number | undefined;
+
+  if (cron) {
+    nextExecuteAt = parseNextTime(cron);
+  }
+
   return this.scriptServices.create({
     content,
     cron,
     timeout,
     disable,
-    lastExecutedAt: undefined,
+    nextExecuteAt,
     token: nanoid(),
   });
 }

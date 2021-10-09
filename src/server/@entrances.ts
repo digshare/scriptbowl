@@ -1,10 +1,27 @@
 import {entrance} from 'entrance-decorator';
 
-import {APIService, DBService, ScriptService, SocketService} from './services';
+import {
+  APIService,
+  CronService,
+  DBService,
+  ScriptCheckerService,
+  ScriptQueueService,
+  ScriptService,
+  SocketService,
+} from './services';
 
 interface Config {
   server: {
     port: number;
+  };
+  queue: {
+    script: {
+      concurrency: number;
+      timeout: number;
+    };
+  };
+  redis: {
+    uri: string;
   };
   mongo: {
     uri: string;
@@ -21,6 +38,8 @@ export class Entrances {
 
   up(): void {
     this.apiService.up();
+    this.scriptCheckerService.up();
+    this.scriptQueueService.up();
   }
 
   /* eslint-disable @mufan/explicit-return-type */
@@ -40,13 +59,33 @@ export class Entrances {
   }
 
   @entrance
+  get cronService() {
+    return new CronService();
+  }
+
+  @entrance
   get apiService() {
     return new APIService(this.socketService, this.scriptService);
   }
 
   @entrance
+  get scriptQueueService() {
+    let {
+      redis: {uri},
+      queue: {script},
+    } = this.config;
+
+    return new ScriptQueueService(uri, script);
+  }
+
+  @entrance
   get scriptService() {
-    return new ScriptService(this.dbService);
+    return new ScriptService(this.dbService, this.scriptQueueService);
+  }
+
+  @entrance
+  get scriptCheckerService() {
+    return new ScriptCheckerService(this.scriptService, this.cronService);
   }
 
   /* eslint-enable @mufan/explicit-return-type */
