@@ -99,7 +99,7 @@ export class Script {
     return new Promise((resolve, reject) => {
       this.updating = {resolve, reject};
       this.ee.emit('update', {
-        id: this.id,
+        script: this.id,
         type,
         data,
       });

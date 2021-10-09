@@ -5,3 +5,4 @@ export * from './queues';
 export * from './script-checker';
 export * from './script';
 export * from './socket';
+export * from './docker';

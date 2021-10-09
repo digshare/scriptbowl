@@ -4,6 +4,7 @@ import {
   APIService,
   CronService,
   DBService,
+  DockerService,
   ScriptCheckerService,
   ScriptQueueService,
   ScriptService,
@@ -40,6 +41,7 @@ export class Entrances {
     this.apiService.up();
     this.scriptCheckerService.up();
     this.scriptQueueService.up();
+    this.dockerService.up();
   }
 
   /* eslint-disable @mufan/explicit-return-type */
@@ -59,6 +61,11 @@ export class Entrances {
   }
 
   @entrance
+  get dockerService() {
+    return new DockerService();
+  }
+
+  @entrance
   get cronService() {
     return new CronService();
   }
@@ -75,7 +82,7 @@ export class Entrances {
       queue: {script},
     } = this.config;
 
-    return new ScriptQueueService(uri, script);
+    return new ScriptQueueService(this.dockerService, uri, script);
   }
 
   @entrance

@@ -4,8 +4,8 @@ import {ScriptService} from './script';
 import {SocketService} from './socket';
 
 export interface APIContext {
-  id: string;
   scriptServices: ScriptService;
+  script: string | undefined;
 }
 
 export class APIService {
@@ -18,7 +18,7 @@ export class APIService {
     this.socketService.wss.on('connection', ws => {
       ws.on('message', async message => {
         try {
-          let {id, type, data} = JSON.parse(String(message));
+          let {id, type, script, data} = JSON.parse(String(message));
 
           try {
             let response = await API[type as keyof typeof API].call<
@@ -27,7 +27,7 @@ export class APIService {
               any
             >(
               {
-                id,
+                script,
                 scriptServices: this.scriptService,
               },
               data as any,

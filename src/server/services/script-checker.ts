@@ -23,13 +23,11 @@ export class ScriptCheckerService {
     );
   }
 
-  stopCronJon(): void {
+  stopCronJob(): void {
     this.cronJob?.stop();
   }
 
   private onScriptTick = async (): Promise<void> => {
-    console.log('onScriptTick');
-
     let collection = this.scriptService.collection;
 
     let filter: Filter<ScriptDocument> = {

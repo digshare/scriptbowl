@@ -1,5 +1,6 @@
 import Queue from 'bull';
 
+import {DockerService} from '../docker';
 import {ScriptDocument} from '../script';
 
 export interface ScriptJobData {
@@ -15,7 +16,11 @@ export interface ScriptQueueOptions {
 export class ScriptQueueService {
   private queue!: Queue.Queue;
 
-  constructor(readonly uri: string, readonly options: ScriptQueueOptions) {}
+  constructor(
+    private dockerService: DockerService,
+    readonly uri: string,
+    readonly options: ScriptQueueOptions,
+  ) {}
 
   up(): void {
     let {concurrency, timeout} = this.options;
@@ -46,23 +51,23 @@ export class ScriptQueueService {
 
     let timeout = Number(script.timeout) || this.options.timeout;
 
-    let staled = await Promise.race([
-      new Promise<true>(resolve => setTimeout(() => resolve(true), timeout)),
-      new Promise<false>(resolve => {
-        setTimeout(() => {
-          console.log('执行代码', script.content, payload);
+    try {
+      let result = await Promise.race([
+        new Promise((_, reject) =>
+          setTimeout(() => reject('TIMEOUT'), timeout),
+        ),
+        // ignore reject
+        this.dockerService.run().catch(() => {}),
+      ]);
 
-          resolve(false);
-        }, 600);
-      }),
-    ]);
-
-    if (!staled) {
-      done();
-      return;
+      console.log(result);
+    } catch (error) {
+      // TODO 记录执行超时
+      console.log(error);
     }
 
-    // TODO
-    console.log('超时');
+    console.log('run end');
+
+    done();
   };
 }

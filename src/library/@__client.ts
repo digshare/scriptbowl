@@ -2,10 +2,18 @@ import {ScriptBowl} from './bowl';
 
 (async () => {
   const scriptBowl = new ScriptBowl('ws://localhost:8080');
-  await scriptBowl.create({
-    cron: '*/2 * * * *',
-    content: 'ε=ε=ε=(~￣▽￣)~ 两分钟一次',
-  });
+
+  // 测试并发
+  await Promise.all(
+    Array(10)
+      .fill(undefined)
+      .map(() => scriptBowl.get('616140d74c8e1e279f1fdc71')),
+  ).then(scripts => scripts.forEach(script => script?.run()));
+
+  // await scriptBowl.create({
+  //   cron: '*/2 * * * *',
+  //   content: 'ε=ε=ε=(~￣▽￣)~ 两分钟一次',
+  // });
 
   // let script = await scriptBowl.create({
   //   content: 'foo',

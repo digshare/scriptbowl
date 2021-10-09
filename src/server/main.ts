@@ -10,7 +10,7 @@ const entrances = new Entrances({
   queue: {
     script: {
       concurrency: 4,
-      timeout: 1000,
+      timeout: 8000,
     },
   },
   mongo: {

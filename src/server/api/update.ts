@@ -15,7 +15,7 @@ export async function update(
     disable?: boolean;
   },
 ): Promise<boolean> {
-  return this.scriptServices.update(this.id, {
+  return this.scriptServices.update(this.script!, {
     ...(content !== undefined ? {content} : {}),
     ...(cron !== undefined
       ? {cron, nextExecuteAt: parseNextTime(cron)}

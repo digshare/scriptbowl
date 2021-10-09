@@ -58,7 +58,7 @@ export class ScriptBowl {
 
   async get(id: string): Promise<Script | undefined> {
     let script = await this.request<ScriptDocument | undefined>({
-      id,
+      script: id,
       type: 'get',
       data: {
         id,
@@ -78,23 +78,24 @@ export class ScriptBowl {
   }
 
   private request = <T>({
-    id,
     type,
+    script,
     data,
   }: {
-    id?: string;
+    script?: string;
     type: string;
     data: any;
   }): Promise<T> => {
     return this.ready.then(
       () =>
         new Promise((resolve, reject) => {
-          id ||= uniqueId();
+          let id = uniqueId();
           this.resolverMap.set(id, {resolve, reject});
           this.ws.send(
             JSON.stringify({
               id,
               type,
+              script,
               data,
             }),
           );
