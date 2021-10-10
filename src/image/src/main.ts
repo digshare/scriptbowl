@@ -1,8 +1,9 @@
 import * as ChildProcess from 'child_process';
 import * as Path from 'path';
+import {Readable} from 'stream';
 
 import * as FS from 'fs-extra';
-import JSZip from 'jszip';
+import tar from 'tar-stream';
 
 let filesDir = Path.join(__dirname, '../files');
 
@@ -12,8 +13,10 @@ let zipLength = 0;
 let payloadLength = 0;
 let totalLength = 0;
 
-function main(_payload: any): void {
-  let child = ChildProcess.spawn('ls', ['-al', filesDir]);
+async function main(): Promise<void> {
+  let entrance = await getEntrancePath();
+
+  let child = ChildProcess.spawn(entrance);
 
   child.on('exit', () => process.exit());
 
@@ -42,38 +45,66 @@ process.stdin.on('data', async chunk => {
 
     await unzip(input.slice(headerSize, zipLength + headerSize));
 
-    let payload = await extractPayload(input.slice(headerSize + zipLength));
+    await savePayload(input.slice(headerSize + zipLength));
 
-    main(payload);
+    await main();
   } catch (error) {
     console.error(error);
     process.exit(1);
   }
 });
 
-async function unzip(zipData: Buffer): Promise<void[]> {
-  let zip = new JSZip();
+async function unzip(zipData: Buffer): Promise<void> {
+  let pack = Readable.from(zipData);
+  let extract = tar.extract();
 
-  await zip.loadAsync(zipData);
+  let resolve: (() => void) | undefined;
 
-  let promiseList: Promise<any>[] = [];
+  extract.on('entry', (header, stream, next) => {
+    let chunks: Buffer[] = [];
 
-  zip.forEach((path, file) =>
-    promiseList.push(
-      file.async('nodebuffer').then(buffer => {
-        if (!buffer.length) {
-          // dir
-          return;
-        }
+    let handle = (chunk: Buffer): number => chunks.push(chunk);
 
-        return FS.outputFile(Path.join(filesDir, path), buffer);
-      }),
-    ),
-  );
+    stream.on('data', handle);
 
-  return Promise.all(promiseList);
+    stream.on('end', async () => {
+      stream.off('data', handle);
+
+      await FS.outputFile(
+        Path.join(filesDir, header.name),
+        Buffer.concat(chunks),
+        {
+          ...(header.mode
+            ? {
+                mode: header.mode,
+              }
+            : {}),
+        },
+      );
+
+      next();
+    });
+
+    stream.resume();
+  });
+
+  extract.on('finish', function () {
+    resolve!();
+  });
+
+  pack.pipe(extract);
+
+  return new Promise<void>(r => (resolve = r));
 }
 
-async function extractPayload(payloadData: Buffer): Promise<any> {
-  return JSON.parse(payloadData.toString()).payload;
+async function savePayload(payloadData: Buffer): Promise<void> {
+  return FS.outputFile(Path.join(filesDir, '.payload'), payloadData);
+}
+
+async function getEntrancePath(): Promise<string> {
+  let {entrance} = JSON.parse(
+    (await FS.readFile(Path.join(filesDir, '.config'))).toString(),
+  );
+
+  return Path.join(filesDir, entrance);
 }

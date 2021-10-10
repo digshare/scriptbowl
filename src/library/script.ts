@@ -1,6 +1,7 @@
 import EventEmitter from 'eventemitter3';
 
 import {zipFiles} from './@utils';
+import {ScriptFile} from './bowl';
 
 export interface ScriptDocument {
   id: string;
@@ -12,7 +13,7 @@ export interface ScriptDocument {
    * 文件列表
    */
   files: {
-    [fileName in string]: string | Buffer;
+    [fileName in string]: ScriptFile;
   };
   token: string;
   /**

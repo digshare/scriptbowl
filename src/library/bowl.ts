@@ -3,8 +3,13 @@ import {WebSocket} from 'ws';
 import {uniqueId, zipFiles} from './@utils';
 import {Script, ScriptDocument} from './script';
 
-export interface ScriptCreateOptions {
-  content: string;
+export type ScriptFile =
+  | string // file path
+  | ScriptFileDeclare;
+
+export interface ScriptFileDeclare {
+  text: string;
+  mode?: number;
 }
 
 export class ScriptBowl {

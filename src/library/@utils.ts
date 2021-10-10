@@ -1,5 +1,9 @@
-import JSZip from 'jszip';
+import * as FS from 'fs/promises';
+
 import {nanoid} from 'nanoid';
+import tar from 'tar-stream';
+
+import {ScriptFile} from './bowl';
 
 export function uniqueId(): string {
   return nanoid();
@@ -7,11 +11,11 @@ export function uniqueId(): string {
 
 export async function zipFiles(
   files: {
-    [fileName in string]: string | Buffer;
+    [fileName in string]: ScriptFile;
   },
   entrance: string,
 ): Promise<string> {
-  let zip = new JSZip();
+  let pack = tar.pack();
 
   let config = {
     entrance: undefined as string | undefined,
@@ -22,14 +26,40 @@ export async function zipFiles(
       config.entrance = fileName;
     }
 
-    zip.file(fileName, content);
+    let text: string | Buffer;
+    let mode: number | undefined;
+
+    if (typeof content === 'string') {
+      text = await FS.readFile(content);
+
+      mode = parseInt(
+        // eslint-disable-next-line no-bitwise
+        `0${((await FS.stat(content)).mode & 0o777).toString(8)}`,
+        8,
+      );
+    } else {
+      ({text, mode} = content);
+    }
+
+    pack.entry({name: fileName, mode}, text);
   }
 
   if (!config.entrance) {
     throw Error('Entrance not found in files');
   }
 
-  zip.file('.config', JSON.stringify(config));
+  pack.entry({name: '.config'}, JSON.stringify(config));
 
-  return (await zip.generateAsync({type: 'binarystring'})).toString();
+  let promise = new Promise<string>(r => {
+    let chunks: Buffer[] = [];
+
+    pack.on('data', chunk => chunks.push(chunk));
+    pack.on('end', () => {
+      r(Buffer.concat(chunks).toString('binary'));
+    });
+  });
+
+  pack.finalize();
+
+  return promise;
 }

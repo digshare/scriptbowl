@@ -1,21 +1,18 @@
-import * as FS from 'fs/promises';
-
 import {ScriptBowl} from './bowl';
 
 (async () => {
   const scriptBowl = new ScriptBowl('ws://localhost:8080');
 
-  let f = await FS.readFile(__filename);
-
   let script = await scriptBowl.create({
     entrance: 'index.js',
     files: {
-      'index.js': 'asdasdasdasdasd',
-      ...Object.fromEntries(
-        Array(1)
-          .fill(undefined)
-          .map((_, index) => [`${index}.ts`, f]),
-      ),
+      'index.js': {
+        text: `#!/usr/bin/env node
+        require('child_process').spawn('ls', ['-al', '/app/files']).stdout.pipe(process.stdout);
+        require('child_process').spawn('cat', ['/app/files/.payload']).stdout.pipe(process.stdout);
+        `,
+        mode: 0o777,
+      },
     },
   });
 
