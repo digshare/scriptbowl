@@ -1,8 +1,19 @@
 import EventEmitter from 'eventemitter3';
 
+import {zipFiles} from './@utils';
+
 export interface ScriptDocument {
   id: string;
-  content: string;
+  /**
+   * 入口文件名称
+   */
+  entrance: string;
+  /**
+   * 文件列表
+   */
+  files: {
+    [fileName in string]: string | Buffer;
+  };
   token: string;
   /**
    * 定时执行 cron 表达式
@@ -49,13 +60,16 @@ export class Script {
   }
 
   async update({
-    content,
+    entrance,
+    files,
     cron,
     timeout,
     disable,
   }: Partial<Omit<ScriptDocument, 'id' | 'token'>>): Promise<void> {
     return this._update('update', {
-      content,
+      entrance,
+      content:
+        files && (await zipFiles(files, entrance || this.document.entrance)),
       cron,
       timeout,
       disable,

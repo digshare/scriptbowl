@@ -34,6 +34,7 @@ export class ScriptCheckerService {
       nextExecuteAt: {
         $lt: Date.now(),
       },
+      disable: false,
     };
 
     let scripts = await collection.find(filter).toArray();

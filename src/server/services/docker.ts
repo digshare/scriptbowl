@@ -64,7 +64,7 @@ export class DockerService {
 
         await container.start();
 
-        stream.write(`${content}\n`);
+        stream.write('Asdasdasdasdas喵喵喵');
 
         let {StatusCode} = await container.wait();
 

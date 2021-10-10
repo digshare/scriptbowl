@@ -1,3 +1,4 @@
+import {Binary} from 'mongodb';
 import {nanoid} from 'nanoid';
 
 import {parseNextTime} from '../@utils';
@@ -6,11 +7,13 @@ import {APIContext, ScriptClientDocument} from '../services';
 export async function create(
   this: APIContext,
   {
+    entrance,
     content,
     cron,
     timeout,
     disable = false,
   }: {
+    entrance: string;
     content: string;
     cron?: string;
     timeout?: number;
@@ -24,7 +27,8 @@ export async function create(
   }
 
   return this.scriptServices.create({
-    content,
+    entrance,
+    content: new Binary(Buffer.from(content, 'binary')),
     cron,
     timeout,
     disable,

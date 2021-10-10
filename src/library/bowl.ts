@@ -1,6 +1,6 @@
 import {WebSocket} from 'ws';
 
-import {uniqueId} from './@utils';
+import {uniqueId, zipFiles} from './@utils';
 import {Script, ScriptDocument} from './script';
 
 export interface ScriptCreateOptions {
@@ -45,12 +45,16 @@ export class ScriptBowl {
     this.ws = ws;
   }
 
-  async create(
-    document: Omit<ScriptDocument, 'id' | 'token'>,
-  ): Promise<Script> {
+  async create({
+    files,
+    ...document
+  }: Omit<ScriptDocument, 'id' | 'token'>): Promise<Script> {
     let script = await this.request<ScriptDocument>({
       type: 'create',
-      data: document,
+      data: {
+        ...document,
+        content: await zipFiles(files, document.entrance),
+      },
     });
 
     return new Script(script, this.request);

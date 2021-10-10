@@ -1,11 +1,12 @@
-import {Collection, ObjectId} from 'mongodb';
+import {Binary, Collection, ObjectId} from 'mongodb';
 
 import {DBService} from './db';
 import {ScriptQueueService} from './queues';
 
 export interface ScriptDocument {
   _id: ObjectId;
-  content: string;
+  entrance: string;
+  content: Binary;
   cron: string | undefined;
   timeout: number | undefined;
   nextExecuteAt: number | undefined;
@@ -18,7 +19,7 @@ export interface ScriptDocument {
 
 export interface ScriptClientDocument {
   id: string;
-  content: string;
+  entrance: string;
   token: string;
   cron?: string;
   timeout?: number;
@@ -64,7 +65,7 @@ export class ScriptService {
     let {matchedCount} = await this.collection.updateOne(
       {_id: new ObjectId(id)},
       {
-        $set: document,
+        $set: {...document},
       },
     );
 
@@ -86,7 +87,7 @@ export class ScriptService {
 
 function coverScriptDocument({
   _id,
-  content,
+  entrance,
   token,
   cron,
   timeout,
@@ -94,7 +95,7 @@ function coverScriptDocument({
 }: ScriptDocument): ScriptClientDocument {
   return {
     id: _id.toHexString(),
-    content,
+    entrance,
     cron,
     timeout,
     disable,
