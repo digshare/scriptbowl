@@ -47,26 +47,24 @@ export class ScriptQueueService {
     job: Queue.Job<ScriptJobData>,
     done: Queue.DoneCallback,
   ): Promise<void> => {
-    let {script, payload} = job.data;
+    let {
+      script: {content, timeout},
+      payload,
+    } = job.data;
 
-    let timeout = Number(script.timeout) || this.options.timeout;
+    timeout = Number(timeout) || this.options.timeout;
 
     try {
-      let result = await Promise.race([
-        new Promise((_, reject) =>
-          setTimeout(() => reject('TIMEOUT'), timeout),
-        ),
-        // ignore reject
-        this.dockerService.run().catch(() => {}),
-      ]);
+      let result = await this.dockerService.run({
+        content: JSON.stringify({content, payload}),
+        timeout,
+      });
 
-      console.log(result);
-    } catch (error) {
-      // TODO 记录执行超时
-      console.log(error);
+      console.info({result});
+    } catch ({message}) {
+      // TODO 记录执行超时 和 报错
+      console.info({error: message});
     }
-
-    console.log('run end');
 
     done();
   };

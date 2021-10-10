@@ -1,82 +1,84 @@
-import * as Path from 'path';
-
 import Docker from 'dockerode';
 
 import {StringWritable} from '../@utils';
 
-const TAG = 'sb-test';
+const IMAGE_NAME_DEFAULT = 'scriptbowl';
 
 export class DockerService {
   readonly docker: Docker;
 
-  constructor() {
-    this.docker = new Docker();
+  constructor(
+    readonly dockerOptions: Docker.DockerOptions & {
+      image: string;
+    } = {
+      image: IMAGE_NAME_DEFAULT,
+    },
+  ) {
+    this.docker = new Docker(dockerOptions);
   }
 
-  up(): void {
-    let docker = this.docker;
+  async run({
+    content,
+    timeout,
+  }: {
+    content: string;
+    timeout: number;
+  }): Promise<string> {
+    let {image} = this.dockerOptions;
+    let containerRef: Docker.Container | undefined;
 
-    // 构建镜像的 测试
-    async function _test(): Promise<void> {
-      console.info('image building...');
-      let stream = await docker.buildImage(
-        {
-          context: Path.join(__dirname, '../../../src/server/@digshare'),
-          src: ['Dockerfile', 'main.js'],
-        },
-        {
-          t: TAG,
-        },
-      );
-      await new Promise((resolve, reject) => {
-        docker.modem.followProgress(stream, (err, res) => {
-          return err ? reject(err) : resolve(res);
+    return Promise.race<string>([
+      new Promise<any>((_, reject) =>
+        setTimeout(async () => {
+          if (containerRef) {
+            void containerRef.stop();
+          }
+
+          reject(Error('TIMEOUT'));
+        }, timeout),
+      ),
+      new Promise<string>(async (resolve, reject) => {
+        let stdout = new StringWritable();
+        let stderr = new StringWritable();
+
+        let container = await this.docker.createContainer({
+          Image: image,
+          Tty: false,
+          OpenStdin: true,
+          AttachStdin: true,
+          AttachStdout: true,
+          AttachStderr: true,
+          StdinOnce: true,
         });
-      });
 
-      // TODO 打印构建时的 log
-      // await new Promise((resolve, reject) => {
-      //   docker.modem.followProgress(
-      //     stream,
-      //     (err, res) => {
-      //       return err ? reject(err) : resolve(res);
-      //     },
-      //     obj => {
-      //       let {status, stream, progress} = obj;
-      //       process.stdout.write(
-      //         `${status || stream}${progress ? `${progress}` : ''}\r`,
-      //       );
-      //     },
-      //   );
-      // });
-      console.info('image builded');
-    }
+        containerRef = container;
 
-    // _test();
-  }
+        let stream = await container.attach({
+          stream: true,
+          stdin: true,
+          stdout: true,
+          stderr: true,
+        });
 
-  async run(): Promise<string> {
-    let stdout = new StringWritable();
-    let stderr = new StringWritable();
+        container.modem.demuxStream(stream, stdout, stderr);
 
-    let [{StatusCode}, container] = await this.docker.run(
-      TAG,
-      [],
-      [stdout, stderr],
-      {
-        Tty: false,
-      },
-    );
+        await container.start();
 
-    await container.remove();
+        stream.write(`${content}\n`);
 
-    // TODO log 记录
+        let {StatusCode} = await container.wait();
 
-    if (StatusCode) {
-      // TODO 尽管抛错了, 但仍然需要记录 log
-      throw new Error(await stderr.end());
-    }
+        await container.remove();
 
-    return stdout.end();
+        containerRef = undefined;
+
+        if (StatusCode) {
+          // TODO 尽管抛错了, 但仍然需要记录 log
+          reject(Error(await stderr.end()));
+        } else {
+          resolve(stdout.end());
+        }
+      }),
+    ]);
   }
 }

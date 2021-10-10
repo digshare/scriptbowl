@@ -5,7 +5,7 @@ import {ScriptBowl} from './bowl';
 
   // 测试并发
   await Promise.all(
-    Array(10)
+    Array(1)
       .fill(undefined)
       .map(() => scriptBowl.get('616140d74c8e1e279f1fdc71')),
   ).then(scripts => scripts.forEach(script => script?.run()));

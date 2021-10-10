@@ -12,7 +12,7 @@ export async function run(
 ): Promise<void> {
   let script = await this.scriptServices.match(token);
 
-  if (!script) {
+  if (!script || script.disable) {
     throw Error('No running permission');
   }
 

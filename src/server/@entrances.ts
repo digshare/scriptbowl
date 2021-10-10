@@ -15,6 +15,12 @@ interface Config {
   server: {
     port: number;
   };
+  docker: {
+    image: string;
+    socketPath?: string;
+    host?: string;
+    port?: number | string;
+  };
   queue: {
     script: {
       concurrency: number;
@@ -41,7 +47,6 @@ export class Entrances {
     this.apiService.up();
     this.scriptCheckerService.up();
     this.scriptQueueService.up();
-    this.dockerService.up();
   }
 
   /* eslint-disable @mufan/explicit-return-type */
@@ -62,7 +67,9 @@ export class Entrances {
 
   @entrance
   get dockerService() {
-    return new DockerService();
+    let {docker} = this.config;
+
+    return new DockerService(docker);
   }
 
   @entrance

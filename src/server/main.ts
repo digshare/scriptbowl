@@ -4,14 +4,17 @@ const entrances = new Entrances({
   server: {
     port: 8080,
   },
-  redis: {
-    uri: 'redis://127.0.0.1:6379',
+  docker: {
+    image: 'sbt',
   },
   queue: {
     script: {
       concurrency: 4,
       timeout: 8000,
     },
+  },
+  redis: {
+    uri: 'redis://127.0.0.1:6379',
   },
   mongo: {
     uri: 'mongodb://localhost:27017',
