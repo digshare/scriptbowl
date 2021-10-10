@@ -1,6 +1,7 @@
 import * as ChildProcess from 'child_process';
 import * as Path from 'path';
 import {Readable} from 'stream';
+import * as Zlib from 'zlib';
 
 import * as FS from 'fs-extra';
 import tar from 'tar-stream';
@@ -55,7 +56,11 @@ process.stdin.on('data', async chunk => {
 });
 
 async function unzip(zipData: Buffer): Promise<void> {
-  let pack = Readable.from(zipData);
+  let decodeZipData = await new Promise<Buffer>(resolve => {
+    Zlib.brotliDecompress(zipData, (_, buffer) => resolve(buffer));
+  });
+
+  let pack = Readable.from(decodeZipData);
   let extract = tar.extract();
 
   let resolve: (() => void) | undefined;

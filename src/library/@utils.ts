@@ -1,4 +1,5 @@
 import * as FS from 'fs/promises';
+import * as Zlib from 'zlib';
 
 import {nanoid} from 'nanoid';
 import tar from 'tar-stream';
@@ -50,12 +51,14 @@ export async function zipFiles(
 
   pack.entry({name: '.config'}, JSON.stringify(config));
 
-  let promise = new Promise<string>(r => {
+  let promise = new Promise<string>(resolve => {
     let chunks: Buffer[] = [];
 
     pack.on('data', chunk => chunks.push(chunk));
     pack.on('end', () => {
-      r(Buffer.concat(chunks).toString('binary'));
+      Zlib.brotliCompress(Buffer.concat(chunks), (_, buffer) => {
+        resolve(buffer.toString('binary'));
+      });
     });
   });
 

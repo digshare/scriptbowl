@@ -8,7 +8,7 @@ import {ScriptBowl} from './bowl';
     files: {
       'index.js': {
         text: `#!/usr/bin/env node
-        require('child_process').spawn('ls', ['-al', '/app/files']).stdout.pipe(process.stdout);
+        // require('child_process').spawn('ls', ['-al', '/app/files']).stdout.pipe(process.stdout);
         require('child_process').spawn('cat', ['/app/files/.payload']).stdout.pipe(process.stdout);
         `,
         mode: 0o777,
