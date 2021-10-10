@@ -1,10 +1,12 @@
 import {API} from '../api';
 
+import {ScriptQueueService} from './queues';
 import {ScriptService} from './script';
 import {SocketService} from './socket';
 
 export interface APIContext {
   scriptServices: ScriptService;
+  scriptQueueService: ScriptQueueService;
   script: string | undefined;
 }
 
@@ -12,6 +14,7 @@ export class APIService {
   constructor(
     private socketService: SocketService,
     private scriptService: ScriptService,
+    private scriptQueueService: ScriptQueueService,
   ) {}
 
   up(): void {
@@ -29,6 +32,7 @@ export class APIService {
               {
                 script,
                 scriptServices: this.scriptService,
+                scriptQueueService: this.scriptQueueService,
               },
               data as any,
             );

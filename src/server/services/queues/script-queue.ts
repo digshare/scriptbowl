@@ -1,10 +1,10 @@
 import Queue from 'bull';
 
 import {DockerService} from '../docker';
-import {ScriptDocument} from '../script';
+import {ScriptService} from '../script';
 
 export interface ScriptJobData {
-  script: ScriptDocument;
+  script: string;
   payload?: any;
 }
 
@@ -18,6 +18,7 @@ export class ScriptQueueService {
 
   constructor(
     private dockerService: DockerService,
+    private scriptService: ScriptService,
     readonly uri: string,
     readonly options: ScriptQueueOptions,
   ) {}
@@ -37,26 +38,36 @@ export class ScriptQueueService {
   }
 
   addJob(data: ScriptJobData): Promise<Queue.Job> {
-    return this.queue.add(data, {
-      // 暂时不限制 一个脚本只能同时有一个在跑
-      // jobId: data.script._id.toHexString(),
-    });
+    return this.queue.add(data);
   }
 
   private process = async (
     job: Queue.Job<ScriptJobData>,
     done: Queue.DoneCallback,
   ): Promise<void> => {
-    let {
-      script: {content, timeout},
-      payload,
-    } = job.data;
+    let {script, payload} = job.data;
+
+    let document = await this.scriptService.query(script);
+
+    if (!document || document.disable) {
+      return;
+    }
+
+    let {timeout, content} = document;
 
     timeout = Number(timeout) || this.options.timeout;
 
+    let contentBuffer = content.buffer;
+    let payloadBuffer = Buffer.from(JSON.stringify({payload}));
+
+    let header = Buffer.allocUnsafe(8);
+
+    header.writeUInt32BE(contentBuffer.length, 0);
+    header.writeUInt32BE(payloadBuffer.length, 4);
+
     try {
       let result = await this.dockerService.run({
-        content: JSON.stringify({content, payload}),
+        content: Buffer.concat([header, contentBuffer, payloadBuffer]),
         timeout,
       });
 

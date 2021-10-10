@@ -79,7 +79,11 @@ export class Entrances {
 
   @entrance
   get apiService() {
-    return new APIService(this.socketService, this.scriptService);
+    return new APIService(
+      this.socketService,
+      this.scriptService,
+      this.scriptQueueService,
+    );
   }
 
   @entrance
@@ -89,17 +93,26 @@ export class Entrances {
       queue: {script},
     } = this.config;
 
-    return new ScriptQueueService(this.dockerService, uri, script);
+    return new ScriptQueueService(
+      this.dockerService,
+      this.scriptService,
+      uri,
+      script,
+    );
   }
 
   @entrance
   get scriptService() {
-    return new ScriptService(this.dbService, this.scriptQueueService);
+    return new ScriptService(this.dbService);
   }
 
   @entrance
   get scriptCheckerService() {
-    return new ScriptCheckerService(this.scriptService, this.cronService);
+    return new ScriptCheckerService(
+      this.scriptService,
+      this.scriptQueueService,
+      this.cronService,
+    );
   }
 
   /* eslint-enable @mufan/explicit-return-type */

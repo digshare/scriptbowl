@@ -16,5 +16,8 @@ export async function run(
     throw Error('No running permission');
   }
 
-  await this.scriptServices.run(script, payload);
+  await this.scriptQueueService.addJob({
+    script: script._id.toHexString(),
+    payload,
+  });
 }

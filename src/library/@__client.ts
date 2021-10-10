@@ -1,12 +1,21 @@
+import * as FS from 'fs/promises';
+
 import {ScriptBowl} from './bowl';
 
 (async () => {
   const scriptBowl = new ScriptBowl('ws://localhost:8080');
 
+  let f = await FS.readFile(__filename);
+
   let script = await scriptBowl.create({
     entrance: 'index.js',
     files: {
       'index.js': 'asdasdasdasdasd',
+      ...Object.fromEntries(
+        Array(1)
+          .fill(undefined)
+          .map((_, index) => [`${index}.ts`, f]),
+      ),
     },
   });
 

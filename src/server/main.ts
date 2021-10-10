@@ -9,8 +9,8 @@ const entrances = new Entrances({
   },
   queue: {
     script: {
-      concurrency: 4,
-      timeout: 8000,
+      concurrency: 10,
+      timeout: 20000,
     },
   },
   redis: {

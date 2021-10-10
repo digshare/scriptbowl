@@ -21,7 +21,7 @@ export class DockerService {
     content,
     timeout,
   }: {
-    content: string;
+    content: Buffer;
     timeout: number;
   }): Promise<string> {
     let {image} = this.dockerOptions;
@@ -64,7 +64,7 @@ export class DockerService {
 
         await container.start();
 
-        stream.write('Asdasdasdasdas喵喵喵');
+        stream.write(content);
 
         let {StatusCode} = await container.wait();
 

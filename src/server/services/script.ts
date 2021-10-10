@@ -1,7 +1,6 @@
 import {Binary, Collection, ObjectId} from 'mongodb';
 
 import {DBService} from './db';
-import {ScriptQueueService} from './queues';
 
 export interface ScriptDocument {
   _id: ObjectId;
@@ -31,15 +30,18 @@ export class ScriptService {
     return this.dbService.collection<ScriptDocument>('scripts');
   }
 
-  constructor(
-    private dbService: DBService,
-    private scriptQueueService: ScriptQueueService,
-  ) {}
+  constructor(private dbService: DBService) {}
 
   async get(id: string): Promise<ScriptClientDocument | undefined> {
     let document = await this.collection.findOne({_id: new ObjectId(id)});
 
     return document ? coverScriptDocument(document) : undefined;
+  }
+
+  async query(id: string): Promise<ScriptDocument | undefined> {
+    let document = await this.collection.findOne({_id: new ObjectId(id)});
+
+    return document || undefined;
   }
 
   async match(token: string): Promise<ScriptDocument | undefined> {
@@ -78,10 +80,6 @@ export class ScriptService {
     });
 
     return !!deletedCount;
-  }
-
-  async run(script: ScriptDocument, payload?: any): Promise<void> {
-    await this.scriptQueueService.addJob({script, payload});
   }
 }
 

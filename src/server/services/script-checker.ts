@@ -4,6 +4,7 @@ import {Filter} from 'mongodb';
 import {parseNextTime} from '../@utils';
 
 import {CronService} from './cron';
+import {ScriptQueueService} from './queues';
 import {ScriptDocument, ScriptService} from './script';
 
 const SCRIPT_CRON_DEFAULT = '*/1 * * * *';
@@ -13,6 +14,7 @@ export class ScriptCheckerService {
 
   constructor(
     private scriptService: ScriptService,
+    private scriptQueueService: ScriptQueueService,
     private cronService: CronService,
   ) {}
 
@@ -48,7 +50,11 @@ export class ScriptCheckerService {
     let promiseList: Promise<any>[] = [];
 
     for (let script of scripts) {
-      promiseList.push(this.scriptService.run(script));
+      promiseList.push(
+        this.scriptQueueService.addJob({
+          script: script._id.toHexString(),
+        }),
+      );
 
       if (script.cron) {
         promiseList.push(

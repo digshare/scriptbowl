@@ -8,6 +8,7 @@
   "scripts": {
     "serve": "node ./bld/server/main.js",
     "test-client": "node ./bld/library/@__client.js",
+    "build-image": "docker build -t sbt ./src/image",
     "build": "rimraf ./bld && tsc --build",
     "lint": "eslint .",
     "lint-prettier": "prettier --check .",

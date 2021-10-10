@@ -12,6 +12,7 @@ export async function zipFiles(
   entrance: string,
 ): Promise<string> {
   let zip = new JSZip();
+
   let config = {
     entrance: undefined as string | undefined,
   };
