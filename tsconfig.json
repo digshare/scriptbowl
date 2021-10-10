@@ -5,6 +5,9 @@
     },
     {
       "path": "src/server"
+    },
+    {
+      "path": "src/image"
     }
   ],
   "files": []
