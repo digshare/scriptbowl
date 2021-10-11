@@ -52,7 +52,7 @@ export class Script {
   }
 
   constructor(
-    private readonly document: ScriptDocument,
+    readonly document: ScriptDocument,
     updater?: (event: any) => Promise<any>,
   ) {
     if (updater) {
