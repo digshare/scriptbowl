@@ -1,13 +1,14 @@
-FROM node:14
+FROM node:14.8
 
-WORKDIR /app
+ENV SCRIPTBOWLDIR=/scriptbowl
+ENV FILESDIR=/files
 
-COPY src/ /app/src/
-COPY package.json /app/package.json
-COPY yarn.lock /app/yarn.lock
+WORKDIR $SCRIPTBOWLDIR
+
+COPY src/ $SCRIPTBOWLDIR/src/
+COPY package.json $SCRIPTBOWLDIR/package.json
+COPY yarn.lock $SCRIPTBOWLDIR/yarn.lock
 
 RUN yarn && yarn build
 
-ENV NODE_ENV=production
-
-CMD node bld/main.js
+CMD node $SCRIPTBOWLDIR/bld/main.js

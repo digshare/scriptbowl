@@ -7,54 +7,31 @@ import {ScriptBowl} from './bowl';
     entrance: 'index.js',
     files: {
       'index.js': {
-        text: `#!/usr/bin/env node
-        // require('child_process').spawn('ls', ['-al', '/app/files']).stdout.pipe(process.stdout);
-        require('child_process').spawn('cat', ['/app/files/.payload']).stdout.pipe(process.stdout);
+        text: `#!/usr/bin/env ds-javascript
+import fn from './test.js';
+
+export default function (payload) {
+  console.log(payload);
+  console.log(fn());
+}
+
         `,
         mode: 0o777,
+      },
+      'test.js': {
+        text: `
+export default function () {
+  console.log("???");
+
+  return 888
+}
+
+        `,
       },
     },
   });
 
-  await script.run('bbbb');
+  await script.run(666);
 
-  // await scriptBowl.create({
-  //   cron: '*/2 * * * *',
-  //   content: 'ε=ε=ε=(~￣▽￣)~ 两分钟一次',
-  // });
-
-  // let id = script.id;
-
-  // console.assert(typeof id === 'string');
-
-  // await script.update({content: 'bar'});
-
-  // await script.disable();
-
-  // await script.run();
-
-  // await script.enable();
-
-  // script = await scriptBowl.require(id);
-
-  // await script.run();
-
-  // await script.remove();
-
-  // console.assert(!(await scriptBowl.get(id)));
-
-  // Promise.all(
-  //   Array(10)
-  //     .fill(undefined)
-  //     .map(() =>
-  //       scriptBowl.create({
-  //         cron: '*/1 * * * *',
-  //         content: 'foo',
-  //       }),
-  //     ),
-  // )
-  //   .then(scripts => scripts.map((script, index) => script.run(index)))
-  //   .finally(() => {});
-
-  console.log('okey');
+  console.log('done');
 })().catch(console.error);

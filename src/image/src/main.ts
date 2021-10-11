@@ -6,8 +6,6 @@ import * as Zlib from 'zlib';
 import * as FS from 'fs-extra';
 import tar from 'tar-stream';
 
-let filesDir = Path.join(__dirname, '../files');
-
 let input = Buffer.allocUnsafe(0);
 
 let zipLength = 0;
@@ -19,7 +17,7 @@ async function main(): Promise<void> {
 
   let child = ChildProcess.spawn(entrance);
 
-  child.on('exit', () => process.exit());
+  child.on('exit', code => process.exit(code ?? 0));
 
   child.stdout.pipe(process.stdout);
   child.stderr.pipe(process.stderr);
@@ -75,17 +73,13 @@ async function unzip(zipData: Buffer): Promise<void> {
     stream.on('end', async () => {
       stream.off('data', handle);
 
-      await FS.outputFile(
-        Path.join(filesDir, header.name),
-        Buffer.concat(chunks),
-        {
-          ...(header.mode
-            ? {
-                mode: header.mode,
-              }
-            : {}),
-        },
-      );
+      await FS.outputFile(getFilePath(header.name), Buffer.concat(chunks), {
+        ...(header.mode
+          ? {
+              mode: header.mode,
+            }
+          : {}),
+      });
 
       next();
     });
@@ -103,13 +97,17 @@ async function unzip(zipData: Buffer): Promise<void> {
 }
 
 async function savePayload(payloadData: Buffer): Promise<void> {
-  return FS.outputFile(Path.join(filesDir, '.payload'), payloadData);
+  return FS.outputFile(getFilePath('.payload'), payloadData);
 }
 
 async function getEntrancePath(): Promise<string> {
   let {entrance} = JSON.parse(
-    (await FS.readFile(Path.join(filesDir, '.config'))).toString(),
+    (await FS.readFile(getFilePath('.config'))).toString(),
   );
 
-  return Path.join(filesDir, entrance);
+  return getFilePath(entrance);
+}
+
+function getFilePath(path: string): string {
+  return Path.join(process.env.FILESDIR!, path);
 }

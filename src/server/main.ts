@@ -5,7 +5,7 @@ const entrances = new Entrances({
     port: 8080,
   },
   docker: {
-    image: 'sbt',
+    image: 'digshare',
   },
   queue: {
     script: {
