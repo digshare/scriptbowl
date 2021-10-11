@@ -27,6 +27,16 @@ export interface ScriptDocument {
   disable?: boolean;
 }
 
+export interface ScriptLogDocument {
+  id: string;
+  records: {
+    type: 'out' | 'err';
+    content: string;
+    recordAt: number;
+  }[];
+  createdAt: number;
+}
+
 export class Script {
   private ee = new EventEmitter();
 
@@ -96,8 +106,16 @@ export class Script {
     return !!(await this._update('remove'));
   }
 
-  async getLog(): Promise<string> {
-    return '';
+  /**
+   *
+   * @param start 0 为最新一条, 时间倒序
+   * @param size
+   */
+  async getLogs(
+    start: number = 0,
+    size: number = 1,
+  ): Promise<ScriptLogDocument[]> {
+    return this._update('getLogs', {start, size});
   }
 
   async getLogStream(): Promise<Buffer> {

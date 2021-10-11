@@ -6,6 +6,7 @@ import {
   DBService,
   DockerService,
   ScriptCheckerService,
+  ScriptLogService,
   ScriptQueueService,
   ScriptService,
   SocketService,
@@ -82,6 +83,7 @@ export class Entrances {
     return new APIService(
       this.socketService,
       this.scriptService,
+      this.scriptLogService,
       this.scriptQueueService,
     );
   }
@@ -96,6 +98,7 @@ export class Entrances {
     return new ScriptQueueService(
       this.dockerService,
       this.scriptService,
+      this.scriptLogService,
       uri,
       script,
     );
@@ -104,6 +107,11 @@ export class Entrances {
   @entrance
   get scriptService() {
     return new ScriptService(this.dbService);
+  }
+
+  @entrance
+  get scriptLogService() {
+    return new ScriptLogService(this.dbService);
   }
 
   @entrance

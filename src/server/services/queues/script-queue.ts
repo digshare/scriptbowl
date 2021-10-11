@@ -2,6 +2,7 @@ import Queue from 'bull';
 
 import {DockerService} from '../docker';
 import {ScriptService} from '../script';
+import {ScriptLogService} from '../script-log';
 
 export interface ScriptJobData {
   script: string;
@@ -19,6 +20,7 @@ export class ScriptQueueService {
   constructor(
     private dockerService: DockerService,
     private scriptService: ScriptService,
+    private scriptLogService: ScriptLogService,
     readonly uri: string,
     readonly options: ScriptQueueOptions,
   ) {}
@@ -65,16 +67,22 @@ export class ScriptQueueService {
     header.writeUInt32BE(contentBuffer.length, 0);
     header.writeUInt32BE(payloadBuffer.length, 4);
 
-    try {
-      let result = await this.dockerService.run({
-        content: Buffer.concat([header, contentBuffer, payloadBuffer]),
-        timeout,
-      });
+    let loggers = await this.scriptLogService.getLoggers(script);
 
-      console.info({result});
+    try {
+      let result = await this.dockerService.run(
+        {
+          content: Buffer.concat([header, contentBuffer, payloadBuffer]),
+          timeout,
+        },
+        loggers,
+      );
+
+      console.info({exitCode: result.exitCode});
     } catch ({message}) {
-      // TODO 记录执行超时 和 报错
+      // 超时
       console.info({error: message});
+      await loggers[1].record(String(message));
     }
 
     done();

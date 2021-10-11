@@ -1,8 +1,15 @@
+import {Writable} from 'stream';
+
 import Docker from 'dockerode';
 
 import {StringWritable} from '../@utils';
 
 const IMAGE_NAME_DEFAULT = 'scriptbowl';
+
+export interface DockerContainerRunResult {
+  exitCode: number;
+  stdList: [Writable, Writable];
+}
 
 export class DockerService {
   readonly docker: Docker;
@@ -17,17 +24,20 @@ export class DockerService {
     this.docker = new Docker(dockerOptions);
   }
 
-  async run({
-    content,
-    timeout,
-  }: {
-    content: Buffer;
-    timeout: number;
-  }): Promise<string> {
+  async run(
+    {
+      content,
+      timeout,
+    }: {
+      content: Buffer;
+      timeout: number;
+    },
+    stdList?: [Writable, Writable],
+  ): Promise<DockerContainerRunResult> {
     let {image} = this.dockerOptions;
     let containerRef: Docker.Container | undefined;
 
-    return Promise.race<string>([
+    return Promise.race<DockerContainerRunResult>([
       new Promise<any>((_, reject) =>
         setTimeout(async () => {
           if (containerRef) {
@@ -37,9 +47,9 @@ export class DockerService {
           reject(Error('TIMEOUT'));
         }, timeout),
       ),
-      new Promise<string>(async (resolve, reject) => {
-        let stdout = new StringWritable();
-        let stderr = new StringWritable();
+      new Promise<DockerContainerRunResult>(async resolve => {
+        let stdout = stdList?.[0] || new StringWritable();
+        let stderr = stdList?.[1] || new StringWritable();
 
         let container = await this.docker.createContainer({
           Image: image,
@@ -72,12 +82,13 @@ export class DockerService {
 
         containerRef = undefined;
 
-        if (StatusCode) {
-          // TODO 尽管抛错了, 但仍然需要记录 log
-          reject(Error(await stderr.end()));
-        } else {
-          resolve(stdout.end());
-        }
+        stdout.end();
+        stderr.end();
+
+        resolve({
+          exitCode: StatusCode,
+          stdList: [stdout, stderr],
+        });
       }),
     ]);
   }
