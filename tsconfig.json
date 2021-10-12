@@ -2,12 +2,6 @@
   "references": [
     {
       "path": "src/library"
-    },
-    {
-      "path": "src/server"
-    },
-    {
-      "path": "src/image"
     }
   ],
   "files": []
