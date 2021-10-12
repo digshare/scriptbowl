@@ -7,13 +7,6 @@
     "tsProjects": [
       {
         "name": "library"
-      },
-      {
-        "name": "server",
-        "entrances": true
-      },
-      {
-        "name": "image"
       }
     ]
   }

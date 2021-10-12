@@ -1,3 +1,4 @@
+import {ClientConfig, FCClient} from '@forker/fc2';
 import {WebSocket} from 'ws';
 
 import {uniqueId, zipFiles} from './@utils';
@@ -12,7 +13,13 @@ export interface ScriptFileDeclare {
   mode?: number;
 }
 
+export interface ScriptBowlOptions extends ClientConfig {
+  accountId: string;
+  serviceName: string;
+}
+
 export class ScriptBowl {
+  private fc: FCClient;
   private resolverMap = new Map<
     string,
     {
@@ -21,33 +28,36 @@ export class ScriptBowl {
     }
   >();
   private ready: Promise<void>;
-  private ws: WebSocket;
+  // private ws: WebSocket;
 
-  constructor(readonly hostname: string) {
+  constructor(readonly options: ScriptBowlOptions) {
+    this.fc = new FCClient(options.accountId, options);
+
     let readyResolve!: () => void;
     let ready = new Promise<void>(resolve => (readyResolve = resolve));
 
     this.ready = ready;
 
-    let ws = new WebSocket(hostname);
+    this.fc.getService(this.options.serviceName).then(console.log);
 
-    ws.on('open', readyResolve);
-    ws.on('message', message => {
-      try {
-        let {id, data, error} = JSON.parse(String(message));
-        let {resolve, reject} = this.resolverMap.get(id)!;
+    readyResolve();
+    // ws.on('open', readyResolve);
+    // ws.on('message', message => {
+    //   try {
+    //     let {id, data, error} = JSON.parse(String(message));
+    //     let {resolve, reject} = this.resolverMap.get(id)!;
 
-        if (error) {
-          return reject(new Error(error));
-        }
+    //     if (error) {
+    //       return reject(new Error(error));
+    //     }
 
-        resolve(data);
-      } catch (error) {
-        // invalid response
-      }
-    });
+    //     resolve(data);
+    //   } catch (error) {
+    //     // invalid response
+    //   }
+    // });
 
-    this.ws = ws;
+    // this.ws = ws;
   }
 
   async create({
@@ -100,7 +110,7 @@ export class ScriptBowl {
         new Promise((resolve, reject) => {
           let id = uniqueId();
           this.resolverMap.set(id, {resolve, reject});
-          this.ws.send(
+          console.log(
             JSON.stringify({
               id,
               type,
