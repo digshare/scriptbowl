@@ -1,7 +1,7 @@
 import {ClientConfig, FCClient} from '@forker/fc2';
-import {WebSocket} from 'ws';
 
-import {uniqueId, zipFiles} from './@utils';
+import {zipFiles} from './@utils';
+import {Core} from './core';
 import {Script, ScriptDocument} from './script';
 
 export type ScriptFile =
@@ -18,57 +18,46 @@ export interface ScriptBowlOptions extends ClientConfig {
   serviceName: string;
 }
 
+export interface BowlContext {
+  serviceName: string;
+  fc: FCClient;
+  script: string | undefined;
+}
+
 export class ScriptBowl {
-  private fc: FCClient;
-  private resolverMap = new Map<
-    string,
-    {
-      resolve: (res: any) => void;
-      reject: (error: any) => void;
-    }
-  >();
   private ready: Promise<void>;
-  // private ws: WebSocket;
+
+  readonly fc: FCClient;
 
   constructor(readonly options: ScriptBowlOptions) {
-    this.fc = new FCClient(options.accountId, options);
+    let {accountId, serviceName, ...clientOptions} = options;
+
+    let fc = new FCClient(accountId, clientOptions);
 
     let readyResolve!: () => void;
-    let ready = new Promise<void>(resolve => (readyResolve = resolve));
+    this.ready = new Promise<void>(resolve => (readyResolve = resolve));
 
-    this.ready = ready;
+    fc.getService(serviceName).then(readyResolve, () =>
+      // not create
+      fc
+        .createService(serviceName, {
+          description: 'create by scriptbowl',
+        })
+        .then(readyResolve),
+    );
 
-    this.fc.getService(this.options.serviceName).then(console.log);
-
-    readyResolve();
-    // ws.on('open', readyResolve);
-    // ws.on('message', message => {
-    //   try {
-    //     let {id, data, error} = JSON.parse(String(message));
-    //     let {resolve, reject} = this.resolverMap.get(id)!;
-
-    //     if (error) {
-    //       return reject(new Error(error));
-    //     }
-
-    //     resolve(data);
-    //   } catch (error) {
-    //     // invalid response
-    //   }
-    // });
-
-    // this.ws = ws;
+    this.fc = fc;
   }
 
   async create({
     files,
     ...document
   }: Omit<ScriptDocument, 'id' | 'token'>): Promise<Script> {
-    let script = await this.request<ScriptDocument>({
+    let script = await this.request<string>({
       type: 'create',
       data: {
         ...document,
-        content: await zipFiles(files, document.entrance),
+        content: await zipFiles(files),
       },
     });
 
@@ -76,14 +65,14 @@ export class ScriptBowl {
   }
 
   async get(id: string): Promise<Script | undefined> {
-    let script = await this.request<ScriptDocument | undefined>({
+    await this.request<ScriptDocument | undefined>({
       script: id,
       type: 'get',
       data: {
         id,
       },
     });
-    return script && new Script(script, this.request);
+    return new Script(id, this.request);
   }
 
   async require(id: string): Promise<Script> {
@@ -105,20 +94,15 @@ export class ScriptBowl {
     type: string;
     data: any;
   }): Promise<T> => {
-    return this.ready.then(
-      () =>
-        new Promise((resolve, reject) => {
-          let id = uniqueId();
-          this.resolverMap.set(id, {resolve, reject});
-          console.log(
-            JSON.stringify({
-              id,
-              type,
-              script,
-              data,
-            }),
-          );
-        }),
+    return this.ready.then(() =>
+      Core[type as keyof typeof Core].call<BowlContext, any[], any>(
+        {
+          script,
+          fc: this.fc,
+          serviceName: this.options.serviceName,
+        },
+        data as any,
+      ),
     );
   };
 }

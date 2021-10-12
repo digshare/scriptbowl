@@ -3,8 +3,18 @@ import EventEmitter from 'eventemitter3';
 import {zipFiles} from './@utils';
 import {ScriptFile} from './bowl';
 
+export type ScriptRuntime =
+  | 'nodejs10'
+  | 'nodejs12'
+  | 'python2.7'
+  | 'python3'
+  | 'java8'
+  | 'java11'
+  | 'php7.2';
+
 export interface ScriptDocument {
   id: string;
+  runtime: ScriptRuntime;
   /**
    * 入口文件名称
    */
@@ -21,7 +31,7 @@ export interface ScriptDocument {
    */
   cron?: string;
   /**
-   * 执行超时时间
+   * 执行超时时间（秒）
    */
   timeout?: number;
   disable?: boolean;
@@ -47,14 +57,7 @@ export class Script {
       }
     | undefined;
 
-  get id(): string {
-    return this.document.id;
-  }
-
-  constructor(
-    readonly document: ScriptDocument,
-    updater?: (event: any) => Promise<any>,
-  ) {
+  constructor(readonly id: string, updater?: (event: any) => Promise<any>) {
     if (updater) {
       this.ee.on('update', event => {
         let updating = this.updating;
@@ -79,8 +82,7 @@ export class Script {
   }: Partial<Omit<ScriptDocument, 'id' | 'token'>>): Promise<void> {
     return this._update('update', {
       entrance,
-      content:
-        files && (await zipFiles(files, entrance || this.document.entrance)),
+      content: files && (await zipFiles(files)),
       cron,
       timeout,
       disable,
@@ -88,10 +90,7 @@ export class Script {
   }
 
   async run(payload?: any): Promise<void> {
-    return this._update('run', {
-      token: this.document.token,
-      payload,
-    });
+    return this._update('run', payload);
   }
 
   async enable(): Promise<boolean> {

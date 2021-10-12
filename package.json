@@ -15,7 +15,7 @@
     "test": "yarn lint-prettier && yarn build && yarn lint"
   },
   "dependencies": {
-    "@forker/fc2": "^2.2.4",
+    "@forker/fc2": "2.2.5-types.1",
     "@types/node": "^16.10.3",
     "@types/tar-stream": "^2.2.1",
     "cron-parser": "^4.0.0",

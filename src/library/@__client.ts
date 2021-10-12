@@ -9,9 +9,28 @@ import {ScriptBowl} from './bowl';
     serviceName: 'digshare',
   });
 
-  let script = await scriptBowl.get('6164043b1bcb1674cc7f2051');
+  // scriptBowl.fc.getFunction('digshare', 'test').then(console.log);
 
-  await script!.run(666);
+  // let script = await scriptBowl.get('6164043b1bcb1674cc7f2051');
+
+  // await script!.run(666);
+
+  // ehdhajkbibgejkfiachigkhfdhccbjfe
+
+  // await scriptBowl.create({
+  //   runtime: 'nodejs12',
+  //   entrance: 'index.main',
+  //   cron: '0 0 12 * * *',
+  //   files: {
+  //     'index.js': {
+  //       text: `exports.main = (req, resp, context) => {console.log('hello world');}`,
+  //     },
+  //   },
+  // });
+
+  let script = await scriptBowl.get('ehdhajkbibgejkfiachigkhfdhccbjfe');
+
+  script?.run('????????');
 
   console.log('done');
 })().catch(console.error);

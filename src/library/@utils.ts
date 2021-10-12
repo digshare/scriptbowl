@@ -1,16 +1,31 @@
 import * as FS from 'fs/promises';
 import * as Zlib from 'zlib';
 
-import {nanoid} from 'nanoid';
+import cronParser from 'cron-parser';
+import JSZip from 'jszip';
+import {customAlphabet} from 'nanoid';
 import tar from 'tar-stream';
 
 import {ScriptFile} from './bowl';
+
+const nanoid = customAlphabet('abcdefghijk', 32);
 
 export function uniqueId(): string {
   return nanoid();
 }
 
-export async function zipFiles(
+export function getFunctionName(
+  scriptId: string,
+  type: 'http' | 'timer',
+): string {
+  return `${scriptId}-${type}`;
+}
+
+export function parseNextTime(cron: string): number {
+  return cronParser.parseExpression(cron).next().getTime();
+}
+
+export async function tarFiles(
   files: {
     [fileName in string]: ScriptFile;
   },
@@ -65,4 +80,20 @@ export async function zipFiles(
   pack.finalize();
 
   return promise;
+}
+
+export async function zipFiles(files: {
+  [fileName in string]: ScriptFile;
+}): Promise<string> {
+  let zip = new JSZip();
+
+  for (let [fileName, content] of Object.entries(files)) {
+    if (typeof content === 'string') {
+      zip.file(fileName, await FS.readFile(content));
+    } else {
+      zip.file(fileName, content.text);
+    }
+  }
+
+  return (await zip.generateAsync({type: 'base64'})).toString();
 }

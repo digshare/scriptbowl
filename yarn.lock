@@ -38,10 +38,10 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
-"@forker/fc2@^2.2.4":
-  version "2.2.4"
-  resolved "https://registry.yarnpkg.com/@forker/fc2/-/fc2-2.2.4.tgz#98b5800ddc51f7ba62eae55f02cc167627d070ba"
-  integrity sha512-AbZPXIq3xmkMg5zVM8ANaEEEQIIFrRu+tT1pAM7uqilJeYELOR7HM5az62rP5R2CQj6x52BPlh1HF4RHXg6CqQ==
+"@forker/fc2@2.2.5-types.1":
+  version "2.2.5-types.1"
+  resolved "https://registry.yarnpkg.com/@forker/fc2/-/fc2-2.2.5-types.1.tgz#75540796df23ff92c5caf578a9b2afa34bf5605d"
+  integrity sha512-rxydTKtkjnWXzsg7onQe1BFxi4XIeSeNT5j4OMEbsgOGhYODMdstf6MhmdD/lwN1gwK0FeYYKe1k43LPQP0QaA==
   dependencies:
     "@types/debug" "^4.1.7"
     "@types/node" "^16.10.3"
