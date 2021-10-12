@@ -1,25 +1,19 @@
-import {getFunctionName} from '../@utils';
 import {BowlContext} from '../bowl';
 
 export async function disable(this: BowlContext): Promise<boolean> {
   let serviceName = this.serviceName;
   let scriptId = this.script!;
-  let httpFunctionName = getFunctionName(scriptId, 'http');
 
-  let {data} = await this.fc.getFunction(this.serviceName, httpFunctionName);
+  let {data} = await this.fc.getFunction(this.serviceName, scriptId);
 
   let {cron} = JSON.parse(Object(data).description);
 
-  await this.fc.deleteTrigger(serviceName, httpFunctionName, httpFunctionName);
+  await this.fc.updateFunction(serviceName, scriptId, {
+    description: JSON.stringify({cron, disable: true}),
+  });
 
   if (cron) {
-    let timerFunctionName = getFunctionName(scriptId, 'timer');
-
-    await this.fc.deleteTrigger(
-      serviceName,
-      timerFunctionName,
-      timerFunctionName,
-    );
+    await this.fc.deleteTrigger(serviceName, scriptId, scriptId);
   }
 
   return true;
@@ -28,26 +22,18 @@ export async function disable(this: BowlContext): Promise<boolean> {
 export async function enable(this: BowlContext): Promise<boolean> {
   let serviceName = this.serviceName;
   let scriptId = this.script!;
-  let httpFunctionName = getFunctionName(scriptId, 'http');
 
-  let {data} = await this.fc.getFunction(this.serviceName, httpFunctionName);
+  let {data} = await this.fc.getFunction(this.serviceName, scriptId);
 
   let {cron} = JSON.parse(Object(data).description);
 
-  await this.fc.createTrigger(serviceName, httpFunctionName, {
-    triggerName: httpFunctionName,
-    triggerType: 'http',
-    triggerConfig: {
-      authType: 'function',
-      methods: ['GET', 'POST'],
-    },
+  await this.fc.updateFunction(serviceName, scriptId, {
+    description: JSON.stringify({cron, disable: false}),
   });
 
   if (cron) {
-    let timerFunctionName = getFunctionName(scriptId, 'timer');
-
-    await this.fc.createTrigger(serviceName, timerFunctionName, {
-      triggerName: timerFunctionName,
+    await this.fc.createTrigger(serviceName, scriptId, {
+      triggerName: scriptId,
       triggerType: 'timer',
       triggerConfig: {
         cronExpression: cron,

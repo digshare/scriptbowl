@@ -14,13 +14,6 @@ export function uniqueId(): string {
   return nanoid();
 }
 
-export function getFunctionName(
-  scriptId: string,
-  type: 'http' | 'timer',
-): string {
-  return `${scriptId}-${type}`;
-}
-
 export function parseNextTime(cron: string): number {
   return cronParser.parseExpression(cron).next().getTime();
 }

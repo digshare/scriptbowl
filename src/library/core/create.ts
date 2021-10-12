@@ -1,4 +1,4 @@
-import {getFunctionName, uniqueId} from '../@utils';
+import {uniqueId} from '../@utils';
 import {BowlContext} from '../bowl';
 import {ScriptRuntime} from '../script';
 
@@ -26,27 +26,18 @@ export async function create(
   let scriptId = uniqueId();
 
   await this.fc.createFunction(serviceName, {
-    functionName: getFunctionName(scriptId, 'http'),
+    functionName: scriptId,
     handler: entrance,
-    description: JSON.stringify({cron}),
+    description: JSON.stringify({
+      cron,
+      disable,
+    }),
     code: {
       zipFile: content,
     },
     runtime,
     timeout,
   });
-
-  if (cron) {
-    await this.fc.createFunction(serviceName, {
-      functionName: getFunctionName(scriptId, 'timer'),
-      handler: entrance,
-      code: {
-        zipFile: content,
-      },
-      runtime,
-      timeout,
-    });
-  }
 
   if (!disable) {
     await enable.call({...this, script: scriptId});

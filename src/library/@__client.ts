@@ -15,22 +15,53 @@ import {ScriptBowl} from './bowl';
 
   // await script!.run(666);
 
-  // ehdhajkbibgejkfiachigkhfdhccbjfe
-
   // await scriptBowl.create({
   //   runtime: 'nodejs12',
   //   entrance: 'index.main',
   //   cron: '0 0 12 * * *',
   //   files: {
   //     'index.js': {
-  //       text: `exports.main = (req, resp, context) => {console.log('hello world');}`,
+  //       text: `var getRawBody = require('raw-body')
+  //       module.exports.main = function (request, response, context) {
+  //           // get requset header
+  //           var reqHeader = request.headers
+  //           var headerStr = ' '
+  //           for (var key in reqHeader) {
+  //               headerStr += key + ':' + reqHeader[key] + '  '
+  //           };
+
+  //           // get request info
+  //           var url = request.url
+  //           var path = request.path
+  //           var queries = request.queries
+  //           var queryStr = ''
+  //           for (var param in queries) {
+  //               queryStr += param + "=" + queries[param] + '  '
+  //           };
+  //           var method = request.method
+  //           var clientIP = request.clientIP
+
+  //           // get request body
+  //           getRawBody(request, function (err, data) {
+  //               var body = data
+  //               // you can deal with your own logic here
+
+  //               // set response
+  //               var respBody = new Buffer('requestHeader:' + headerStr + '\n' + 'url: ' + url + '\n' + 'path: ' + path + '\n' + 'queries: ' + queryStr + '\n' + 'method: ' + method + '\n' + 'clientIP: ' + clientIP + '\n' + 'body: ' + body + '\n')
+  //               response.setStatusCode(200)
+  //               response.setHeader('content-type', 'application/json')
+  //               response.send(respBody)
+  //           })
+  //       };     `,
   //     },
   //   },
   // });
 
-  let script = await scriptBowl.get('ehdhajkbibgejkfiachigkhfdhccbjfe');
+  let script = await scriptBowl.get('hbefcjjcajbjagehiiiecgifacfebdeg');
 
   script?.run('????????');
+
+  // script?.disable();
 
   console.log('done');
 })().catch(console.error);
