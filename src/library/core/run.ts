@@ -1,6 +1,6 @@
-import {BowlContext} from '../bowl';
+import {ScriptContext} from '../@context';
 
-export async function run(this: BowlContext, payload?: any): Promise<void> {
+export async function run(this: ScriptContext, payload?: any): Promise<any> {
   let serviceName = this.serviceName;
   let script = this.script!;
 
@@ -13,9 +13,11 @@ export async function run(this: BowlContext, payload?: any): Promise<void> {
     return;
   }
 
-  await this.fc.invokeFunction(
-    serviceName,
-    script,
-    Buffer.from(JSON.stringify({payload}), 'binary'),
-  );
+  return this.fc
+    .invokeFunction(
+      serviceName,
+      script,
+      Buffer.from(JSON.stringify({payload}), 'binary'),
+    )
+    .then(res => res.data);
 }

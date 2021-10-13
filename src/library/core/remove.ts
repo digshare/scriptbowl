@@ -1,6 +1,13 @@
-import {BowlContext} from '../bowl';
+import {ScriptContext} from '../@context';
 
-export async function remove(this: BowlContext): Promise<boolean> {
-  await this.fc.deleteFunction(this.serviceName, this.script!);
+export async function remove(this: ScriptContext): Promise<boolean> {
+  let serviceName = this.serviceName;
+  let scriptId = this.script!;
+
+  try {
+    await this.fc.deleteTrigger(serviceName, scriptId, scriptId);
+  } catch (error) {}
+
+  await this.fc.deleteFunction(serviceName, scriptId);
   return true;
 }

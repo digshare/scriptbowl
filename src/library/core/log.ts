@@ -1,16 +1,15 @@
-import {BowlContext} from '../bowl';
+import {ScriptContext} from '../@context';
+import {ScriptLog} from '../script';
 
 export async function getLogs(
-  this: BowlContext,
+  this: ScriptContext,
   {
-    start,
-    size,
+    from,
+    to,
   }: {
-    start: number;
-    size: number;
+    from: number;
+    to: number;
   },
-): Promise<void> {
-  // return this.scriptLogService.list(this.script!, start, size);
+): Promise<ScriptLog[]> {
+  return this.logger.getLogs(this.script!, from, to);
 }
-
-export function getLogStream(): void {}

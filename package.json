@@ -8,21 +8,20 @@
   "scripts": {
     "serve": "node ./bld/server/main.js",
     "test-client": "node ./bld/library/@__client.js",
-    "build-image": "docker build -t scriptbowl ./src/image",
     "build": "rimraf ./bld && tsc --build",
     "lint": "eslint .",
     "lint-prettier": "prettier --check .",
     "test": "yarn lint-prettier && yarn build && yarn lint"
   },
   "dependencies": {
-    "@forker/fc2": "2.2.5-types.1",
+    "@forker/fc2": "2.2.5-types.2",
     "@types/node": "^16.10.3",
-    "@types/tar-stream": "^2.2.1",
-    "cron-parser": "^4.0.0",
+    "@types/node-fetch": "^2.5.12",
+    "aliyun-sdk": "^1.12.3",
     "eventemitter3": "^4.0.7",
     "jszip": "^3.7.1",
     "nanoid": "^3.1.29",
-    "tar-stream": "^2.2.0",
+    "node-fetch": "^2.6.5",
     "tslib": "^2.3.1"
   },
   "devDependencies": {

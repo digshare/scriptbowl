@@ -1,7 +1,51 @@
 import EventEmitter from 'eventemitter3';
 
-import {zipFiles} from './@utils';
-import {ScriptFile} from './bowl';
+import {generateScriptCodeString} from './@utils';
+
+export type ScriptFile =
+  | string // file path
+  | ScriptFileDeclare;
+
+export interface ScriptFileDeclare {
+  text: string;
+  /**
+   * @deprecated zip 后会丢失 mode
+   */
+  mode?: number;
+}
+
+export interface FilesScriptCode {
+  type: 'files';
+  files: {
+    [fileName: string]: ScriptFile;
+  };
+}
+
+export interface DirectoryScriptCode {
+  type: 'directory';
+  directory: string;
+}
+
+export interface ZipScriptCode {
+  type: 'local-zip' | 'remote-zip';
+  zipPath: string;
+}
+
+export interface GithubScriptCode {
+  type: 'github';
+  owner: string;
+  project: string;
+  /**
+   * default: main
+   */
+  branch?: string;
+}
+
+export type ScriptCode =
+  | FilesScriptCode
+  | DirectoryScriptCode
+  | ZipScriptCode
+  | GithubScriptCode;
 
 export type ScriptRuntime =
   | 'nodejs10'
@@ -12,22 +56,21 @@ export type ScriptRuntime =
   | 'java11'
   | 'php7.2';
 
-export interface ScriptDocument {
+export interface ScriptDefinition<TMeta extends any = any> {
   id: string;
   runtime: ScriptRuntime;
   /**
-   * 入口文件名称
+   * 入口函数, index.main
    */
   entrance: string;
   /**
    * 文件列表
    */
-  files: {
-    [fileName in string]: ScriptFile;
-  };
+  code: ScriptCode;
   token: string;
   /**
    * 定时执行 cron 表达式
+   * https://help.aliyun.com/document_detail/171746.html#p-ouc-hsc-kjo
    */
   cron?: string;
   /**
@@ -35,16 +78,12 @@ export interface ScriptDocument {
    */
   timeout?: number;
   disable?: boolean;
+  meta?: TMeta;
 }
 
-export interface ScriptLogDocument {
-  id: string;
-  records: {
-    type: 'out' | 'err';
-    content: string;
-    recordAt: number;
-  }[];
-  createdAt: number;
+export interface ScriptLog {
+  message: string;
+  time: number;
 }
 
 export class Script {
@@ -75,21 +114,21 @@ export class Script {
 
   async update({
     entrance,
-    files,
+    code,
     cron,
     timeout,
     disable,
-  }: Partial<Omit<ScriptDocument, 'id' | 'token'>>): Promise<void> {
+  }: Partial<Omit<ScriptDefinition, 'id' | 'token'>>): Promise<void> {
     return this._update('update', {
       entrance,
-      content: files && (await zipFiles(files)),
+      content: code && (await generateScriptCodeString(code)),
       cron,
       timeout,
       disable,
     });
   }
 
-  async run(payload?: any): Promise<void> {
+  async run<TReturn>(payload?: any): Promise<TReturn> {
     return this._update('run', payload);
   }
 
@@ -105,20 +144,8 @@ export class Script {
     return !!(await this._update('remove'));
   }
 
-  /**
-   *
-   * @param start 0 为最新一条, 时间倒序
-   * @param size
-   */
-  async getLogs(
-    start: number = 0,
-    size: number = 1,
-  ): Promise<ScriptLogDocument[]> {
-    return this._update('getLogs', {start, size});
-  }
-
-  async getLogStream(): Promise<Buffer> {
-    return Buffer.from('');
+  async getLogs(from: number, to: number = Date.now()): Promise<ScriptLog[]> {
+    return this._update('getLogs', {from, to});
   }
 
   private async _update<T>(type: string, data?: any): Promise<T> {

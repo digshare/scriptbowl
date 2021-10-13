@@ -1,15 +1,19 @@
-import {parseNextTime} from '../@utils';
-import {BowlContext} from '../bowl';
+import {ScriptContext} from '../@context';
+import {ScriptRuntime} from '../script';
+
+import {disable, enable} from './disable';
 
 export async function update(
-  this: BowlContext,
+  this: ScriptContext,
   {
+    runtime,
     entrance,
     content,
     cron,
     timeout,
-    disable,
+    disable: disableValue,
   }: {
+    runtime?: ScriptRuntime;
     entrance?: string;
     content?: string;
     cron?: string;
@@ -17,20 +21,47 @@ export async function update(
     disable?: boolean;
   },
 ): Promise<boolean> {
+  let serviceName = this.serviceName;
+  let scriptId = this.script!;
+
+  let {data} = await this.fc.getFunction(this.serviceName, scriptId);
+
+  let meta = JSON.parse(Object(data).description);
+
+  await this.fc.updateFunction(serviceName, scriptId, {
+    ...(runtime !== undefined ? {runtime} : {}),
+    ...(entrance !== undefined ? {handler: entrance} : {}),
+    ...(timeout !== undefined ? {timeout} : {}),
+    ...(content !== undefined
+      ? {
+          code: {
+            zipFile: content,
+          },
+        }
+      : {}),
+    description: {
+      ...meta,
+      ...(cron ? {cron} : {}),
+      ...(disableValue !== undefined ? {disable: disableValue} : {}),
+    },
+  });
+
+  if (cron) {
+    await this.fc.updateTrigger(serviceName, scriptId, scriptId, {
+      triggerConfig: {
+        cronExpression: cron,
+        enabled: true,
+      },
+    });
+  }
+
+  if (disableValue !== undefined && disableValue !== meta.disable) {
+    if (disableValue) {
+      await disable.call(this);
+    } else {
+      await enable.call(this);
+    }
+  }
+
   return true;
-  // return this.scriptServices.update(this.script!, {
-  //   ...(entrance !== undefined ? {entrance} : {}),
-  //   ...(content !== undefined
-  //     ? {
-  //         content: new Binary(Buffer.from(content, 'binary')),
-  //       }
-  //     : {}),
-  //   ...(cron !== undefined
-  //     ? {cron, nextExecuteAt: parseNextTime(cron)}
-  //     : {
-  //         nextExecuteAt: undefined,
-  //       }),
-  //   ...(timeout !== undefined ? {timeout} : {}),
-  //   ...(disable !== undefined ? {disable} : {}),
-  // });
 }

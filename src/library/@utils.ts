@@ -1,12 +1,16 @@
 import * as FS from 'fs/promises';
-import * as Zlib from 'zlib';
+import * as Path from 'path';
 
-import cronParser from 'cron-parser';
 import JSZip from 'jszip';
 import {customAlphabet} from 'nanoid';
-import tar from 'tar-stream';
+import fetch from 'node-fetch';
 
-import {ScriptFile} from './bowl';
+import {
+  DirectoryScriptCode,
+  FilesScriptCode,
+  GithubScriptCode,
+  ScriptCode,
+} from './script';
 
 const nanoid = customAlphabet('abcdefghijk', 32);
 
@@ -14,70 +18,24 @@ export function uniqueId(): string {
   return nanoid();
 }
 
-export function parseNextTime(cron: string): number {
-  return cronParser.parseExpression(cron).next().getTime();
-}
-
-export async function tarFiles(
-  files: {
-    [fileName in string]: ScriptFile;
-  },
-  entrance: string,
+export async function generateScriptCodeString(
+  code: ScriptCode,
 ): Promise<string> {
-  let pack = tar.pack();
-
-  let config = {
-    entrance: undefined as string | undefined,
-  };
-
-  for (let [fileName, content] of Object.entries(files)) {
-    if (fileName === entrance) {
-      config.entrance = fileName;
-    }
-
-    let text: string | Buffer;
-    let mode: number | undefined;
-
-    if (typeof content === 'string') {
-      text = await FS.readFile(content);
-
-      mode = parseInt(
-        // eslint-disable-next-line no-bitwise
-        `0${((await FS.stat(content)).mode & 0o777).toString(8)}`,
-        8,
-      );
-    } else {
-      ({text, mode} = content);
-    }
-
-    pack.entry({name: fileName, mode}, text);
+  switch (code.type) {
+    case 'files':
+      return zipFiles(code);
+    case 'directory':
+      return zipDirectory(code);
+    case 'github':
+      return fetchGithubCode(code);
+    case 'local-zip':
+      return readZipFile(code.zipPath);
+    case 'remote-zip':
+      return fetchZipFile(code.zipPath);
   }
-
-  if (!config.entrance) {
-    throw Error('Entrance not found in files');
-  }
-
-  pack.entry({name: '.config'}, JSON.stringify(config));
-
-  let promise = new Promise<string>(resolve => {
-    let chunks: Buffer[] = [];
-
-    pack.on('data', chunk => chunks.push(chunk));
-    pack.on('end', () => {
-      Zlib.brotliCompress(Buffer.concat(chunks), (_, buffer) => {
-        resolve(buffer.toString('binary'));
-      });
-    });
-  });
-
-  pack.finalize();
-
-  return promise;
 }
 
-export async function zipFiles(files: {
-  [fileName in string]: ScriptFile;
-}): Promise<string> {
+export async function zipFiles({files}: FilesScriptCode): Promise<string> {
   let zip = new JSZip();
 
   for (let [fileName, content] of Object.entries(files)) {
@@ -88,5 +46,86 @@ export async function zipFiles(files: {
     }
   }
 
-  return (await zip.generateAsync({type: 'base64'})).toString();
+  return zip.generateAsync({type: 'base64'});
+}
+
+export async function fetchGithubCode({
+  owner,
+  project,
+  branch = 'main',
+}: GithubScriptCode): Promise<string> {
+  return fetchZipFile(
+    `https://github.com/${owner}/${project}/archive/refs/heads/${branch}.zip`,
+  );
+}
+
+export async function fetchZipFile(url: string): Promise<string> {
+  return fetch(url)
+    .then(res => res.buffer())
+    .then(buffer => buffer.toString('base64'));
+}
+
+export async function readZipFile(path: string): Promise<string> {
+  return FS.readFile(path).then(buffer => buffer.toString('base64'));
+}
+
+// https://github.com/Stuk/jszip/issues/386#issuecomment-634773343
+export async function zipDirectory({
+  directory,
+}: DirectoryScriptCode): Promise<string> {
+  let allPaths = await getFilePathsRecursively(directory);
+
+  let zip = new JSZip();
+
+  for (let filePath of allPaths) {
+    // Fix in windows
+    let addPath = Path.relative(directory, filePath).split(Path.sep).join('/');
+    let data = await FS.readFile(filePath);
+    let stat = await FS.lstat(filePath);
+    let permissions = stat.mode;
+
+    if (stat.isSymbolicLink()) {
+      zip.file(addPath, await FS.readlink(filePath), {
+        unixPermissions: parseInt('120755', 8), // This permission can be more permissive than necessary for non-executables but we don't mind.
+        dir: stat.isDirectory(),
+      });
+    } else {
+      zip.file(addPath, data, {
+        unixPermissions: permissions,
+        dir: stat.isDirectory(),
+      });
+    }
+  }
+
+  return zip.generateAsync({type: 'base64'});
+
+  async function getFilePathsRecursively(dir: string): Promise<string[]> {
+    // returns a flat array of absolute paths of all files recursively contained in the dir
+    let results: string[] = [];
+    let list = await FS.readdir(dir);
+
+    let pending = list.length;
+
+    if (!pending) {
+      return results;
+    }
+
+    for (let file of list) {
+      file = Path.resolve(dir, file);
+
+      let stat = await FS.lstat(file);
+
+      if (stat && stat.isDirectory()) {
+        results.push(...(await getFilePathsRecursively(file)));
+      } else {
+        results.push(file);
+      }
+
+      if (!--pending) {
+        return results;
+      }
+    }
+
+    return results;
+  }
 }

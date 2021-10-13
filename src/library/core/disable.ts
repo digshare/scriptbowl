@@ -1,15 +1,17 @@
-import {BowlContext} from '../bowl';
+import {ScriptContext} from '../@context';
 
-export async function disable(this: BowlContext): Promise<boolean> {
+export async function disable(this: ScriptContext): Promise<boolean> {
   let serviceName = this.serviceName;
   let scriptId = this.script!;
 
   let {data} = await this.fc.getFunction(this.serviceName, scriptId);
 
-  let {cron} = JSON.parse(Object(data).description);
+  let definition = JSON.parse(Object(data).description);
+
+  let {cron} = definition;
 
   await this.fc.updateFunction(serviceName, scriptId, {
-    description: JSON.stringify({cron, disable: true}),
+    description: JSON.stringify({...definition, disable: true}),
   });
 
   if (cron) {
@@ -19,16 +21,18 @@ export async function disable(this: BowlContext): Promise<boolean> {
   return true;
 }
 
-export async function enable(this: BowlContext): Promise<boolean> {
+export async function enable(this: ScriptContext): Promise<boolean> {
   let serviceName = this.serviceName;
   let scriptId = this.script!;
 
   let {data} = await this.fc.getFunction(this.serviceName, scriptId);
 
-  let {cron} = JSON.parse(Object(data).description);
+  let definition = JSON.parse(Object(data).description);
+
+  let {cron} = definition;
 
   await this.fc.updateFunction(serviceName, scriptId, {
-    description: JSON.stringify({cron, disable: false}),
+    description: JSON.stringify({...definition, disable: false}),
   });
 
   if (cron) {

@@ -1,11 +1,11 @@
+import {ScriptContext} from '../@context';
 import {uniqueId} from '../@utils';
-import {BowlContext} from '../bowl';
 import {ScriptRuntime} from '../script';
 
 import {enable} from './disable';
 
 export async function create(
-  this: BowlContext,
+  this: ScriptContext,
   {
     runtime,
     entrance,
@@ -13,6 +13,7 @@ export async function create(
     cron,
     timeout,
     disable = false,
+    meta,
   }: {
     runtime: ScriptRuntime;
     entrance: string;
@@ -20,6 +21,7 @@ export async function create(
     cron?: string;
     timeout?: number;
     disable?: boolean;
+    meta?: any;
   },
 ): Promise<string> {
   let serviceName = this.serviceName;
@@ -31,6 +33,7 @@ export async function create(
     description: JSON.stringify({
       cron,
       disable,
+      meta,
     }),
     code: {
       zipFile: content,
