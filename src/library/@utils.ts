@@ -18,24 +18,31 @@ export function uniqueId(): string {
   return nanoid();
 }
 
-export async function generateScriptCodeString(
-  code: ScriptCode,
-): Promise<string> {
+export async function generateScriptCodeZip(code: ScriptCode): Promise<JSZip> {
+  let zip: JSZip;
+
   switch (code.type) {
     case 'files':
-      return zipFiles(code);
+      zip = await zipFiles(code);
+      break;
     case 'directory':
-      return zipDirectory(code);
+      zip = await zipDirectory(code);
+      break;
     case 'github':
-      return fetchGithubCode(code);
+      zip = await fetchGithubCode(code);
+      break;
     case 'local-zip':
-      return readZipFile(code.zipPath);
+      zip = await readZipFile(code.zipPath);
+      break;
     case 'remote-zip':
-      return fetchZipFile(code.zipPath);
+      zip = await fetchZipFile(code.zipPath);
+      break;
   }
+
+  return zip;
 }
 
-export async function zipFiles({files}: FilesScriptCode): Promise<string> {
+export async function zipFiles({files}: FilesScriptCode): Promise<JSZip> {
   let zip = new JSZip();
 
   for (let [fileName, content] of Object.entries(files)) {
@@ -46,33 +53,33 @@ export async function zipFiles({files}: FilesScriptCode): Promise<string> {
     }
   }
 
-  return zip.generateAsync({type: 'base64'});
+  return zip;
 }
 
 export async function fetchGithubCode({
   owner,
   project,
   branch = 'main',
-}: GithubScriptCode): Promise<string> {
+}: GithubScriptCode): Promise<JSZip> {
   return fetchZipFile(
     `https://github.com/${owner}/${project}/archive/refs/heads/${branch}.zip`,
   );
 }
 
-export async function fetchZipFile(url: string): Promise<string> {
+export async function fetchZipFile(url: string): Promise<JSZip> {
   return fetch(url)
     .then(res => res.buffer())
-    .then(buffer => buffer.toString('base64'));
+    .then(buffer => new JSZip().loadAsync(buffer));
 }
 
-export async function readZipFile(path: string): Promise<string> {
-  return FS.readFile(path).then(buffer => buffer.toString('base64'));
+export async function readZipFile(path: string): Promise<JSZip> {
+  return FS.readFile(path).then(buffer => new JSZip().loadAsync(buffer));
 }
 
 // https://github.com/Stuk/jszip/issues/386#issuecomment-634773343
 export async function zipDirectory({
   directory,
-}: DirectoryScriptCode): Promise<string> {
+}: DirectoryScriptCode): Promise<JSZip> {
   let allPaths = await getFilePathsRecursively(directory);
 
   let zip = new JSZip();
@@ -97,7 +104,7 @@ export async function zipDirectory({
     }
   }
 
-  return zip.generateAsync({type: 'base64'});
+  return zip;
 
   async function getFilePathsRecursively(dir: string): Promise<string[]> {
     // returns a flat array of absolute paths of all files recursively contained in the dir

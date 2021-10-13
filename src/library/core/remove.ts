@@ -9,5 +9,6 @@ export async function remove(this: ScriptContext): Promise<boolean> {
   } catch (error) {}
 
   await this.fc.deleteFunction(serviceName, scriptId);
+
   return true;
 }

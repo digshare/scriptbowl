@@ -1,7 +1,5 @@
 import EventEmitter from 'eventemitter3';
 
-import {generateScriptCodeString} from './@utils';
-
 export type ScriptFile =
   | string // file path
   | ScriptFileDeclare;
@@ -57,7 +55,6 @@ export type ScriptRuntime =
   | 'php7.2';
 
 export interface ScriptDefinition<TMeta extends any = any> {
-  id: string;
   runtime: ScriptRuntime;
   /**
    * 入口函数, index.main
@@ -67,7 +64,6 @@ export interface ScriptDefinition<TMeta extends any = any> {
    * 文件列表
    */
   code: ScriptCode;
-  token: string;
   /**
    * 定时执行 cron 表达式
    * https://help.aliyun.com/document_detail/171746.html#p-ouc-hsc-kjo
@@ -112,16 +108,17 @@ export class Script {
     }
   }
 
-  async update({
-    entrance,
-    code,
-    cron,
-    timeout,
-    disable,
-  }: Partial<Omit<ScriptDefinition, 'id' | 'token'>>): Promise<void> {
+  async update(params: Partial<ScriptDefinition>): Promise<void> {
+    params = await this._update('hook', {
+      type: 'beforeUpdate',
+      params,
+    });
+
+    let {entrance, code, cron, timeout, disable} = params;
+
     return this._update('update', {
       entrance,
-      content: code && (await generateScriptCodeString(code)),
+      content: code && (await this._update('zipCode', code)),
       cron,
       timeout,
       disable,
@@ -141,6 +138,11 @@ export class Script {
   }
 
   async remove(): Promise<boolean> {
+    await this._update('hook', {
+      type: 'beforeRemove',
+      params: undefined,
+    });
+
     return !!(await this._update('remove'));
   }
 
@@ -157,6 +159,7 @@ export class Script {
 
     return new Promise((resolve, reject) => {
       this.updating = {resolve, reject};
+
       this.ee.emit('update', {
         script: this.id,
         type,

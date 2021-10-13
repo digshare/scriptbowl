@@ -12,6 +12,7 @@ export async function update(
     cron,
     timeout,
     disable: disableValue,
+    meta,
   }: {
     runtime?: ScriptRuntime;
     entrance?: string;
@@ -19,6 +20,7 @@ export async function update(
     cron?: string;
     timeout?: number;
     disable?: boolean;
+    meta?: any;
   },
 ): Promise<boolean> {
   let serviceName = this.serviceName;
@@ -26,12 +28,24 @@ export async function update(
 
   let {data} = await this.fc.getFunction(this.serviceName, scriptId);
 
-  let meta = JSON.parse(Object(data).description);
+  let definition = JSON.parse(Object(data).description);
 
   await this.fc.updateFunction(serviceName, scriptId, {
-    ...(runtime !== undefined ? {runtime} : {}),
-    ...(entrance !== undefined ? {handler: entrance} : {}),
-    ...(timeout !== undefined ? {timeout} : {}),
+    ...(runtime !== undefined
+      ? {
+          runtime,
+        }
+      : {}),
+    ...(entrance !== undefined
+      ? {
+          handler: entrance,
+        }
+      : {}),
+    ...(timeout !== undefined
+      ? {
+          timeout,
+        }
+      : {}),
     ...(content !== undefined
       ? {
           code: {
@@ -39,11 +53,24 @@ export async function update(
           },
         }
       : {}),
-    description: {
-      ...meta,
-      ...(cron ? {cron} : {}),
-      ...(disableValue !== undefined ? {disable: disableValue} : {}),
-    },
+    description: JSON.stringify({
+      ...definition,
+      ...(meta
+        ? {
+            meta,
+          }
+        : {}),
+      ...(cron
+        ? {
+            cron,
+          }
+        : {}),
+      ...(disableValue !== undefined
+        ? {
+            disable: disableValue,
+          }
+        : {}),
+    }),
   });
 
   if (cron) {
@@ -55,7 +82,7 @@ export async function update(
     });
   }
 
-  if (disableValue !== undefined && disableValue !== meta.disable) {
+  if (disableValue !== undefined && disableValue !== definition.disable) {
     if (disableValue) {
       await disable.call(this);
     } else {

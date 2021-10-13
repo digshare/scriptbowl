@@ -1,10 +1,18 @@
 import {ClientConfig, FCClient} from '@forker/fc2';
 import ALY from 'aliyun-sdk';
+import EventEmitter from 'eventemitter3';
+import JSZip from 'jszip';
 
 import {ScriptContext} from './@context';
-import {generateScriptCodeString} from './@utils';
 import {Core} from './core';
 import {Script, ScriptDefinition, ScriptLog} from './script';
+
+export type ScriptBowlEvent =
+  | 'transformScriptCode'
+  | 'afterExecuted'
+  | 'beforeCreate'
+  | 'beforeUpdate'
+  | 'beforeRemove';
 
 export interface ScriptBowlOptions extends ClientConfig {
   accountId: string;
@@ -25,7 +33,15 @@ export interface ScriptLogger {
   getLogs(script: string, from: number, to: number): Promise<ScriptLog[]>;
 }
 
+export interface IScriptBowl {
+  get(id: string): Promise<Script | undefined>;
+  require(id: string): Promise<Script>;
+  create(script: ScriptDefinition): Promise<Script>;
+}
+
 export class ScriptBowl {
+  private ee = new EventEmitter<ScriptBowlEvent>();
+
   private ready: Promise<void>;
 
   private logConfig:
@@ -73,15 +89,25 @@ export class ScriptBowl {
     this.fc = fc;
   }
 
-  async create({
-    code,
-    ...document
-  }: Omit<ScriptDefinition, 'id' | 'token'>): Promise<Script> {
+  async create(params: ScriptDefinition): Promise<Script> {
+    params = await this.request<ScriptDefinition>({
+      type: 'hook',
+      data: {
+        type: 'beforeCreate',
+        params,
+      },
+    });
+
+    let {code, ...document} = params;
+
     let script = await this.request<string>({
       type: 'create',
       data: {
         ...document,
-        content: await generateScriptCodeString(code),
+        content: await this.request({
+          type: 'zipCode',
+          data: code,
+        }),
       },
     });
 
@@ -107,6 +133,72 @@ export class ScriptBowl {
     }
 
     return script;
+  }
+
+  on(
+    event: 'transformScriptCode',
+    handler: (this: ScriptContext, zip: JSZip) => JSZip | Promise<JSZip>,
+  ): void;
+  on(
+    event: 'beforeCreate',
+    handler: (
+      this: ScriptContext,
+      params: ScriptDefinition,
+    ) => ScriptDefinition | Promise<ScriptDefinition>,
+  ): void;
+  on(
+    event: 'beforeUpdate',
+    handler: (
+      this: ScriptContext,
+      params: Partial<ScriptDefinition>,
+    ) => Partial<ScriptDefinition> | Promise<Partial<ScriptDefinition>>,
+  ): void;
+  on(
+    event: 'beforeRemove',
+    handler: (this: ScriptContext) => void | Promise<void>,
+  ): void;
+  on(
+    event: 'afterExecuted',
+    handler: (this: ScriptContext, data?: any) => void,
+  ): void;
+  on(
+    event: ScriptBowlEvent,
+    handler: (this: ScriptContext, ...args: any[]) => any,
+  ): void {
+    this.ee.on(event, handler);
+  }
+
+  off(
+    event: 'transformScriptCode',
+    handler: (this: ScriptContext, zip: JSZip) => JSZip | Promise<JSZip>,
+  ): void;
+  off(
+    event: 'beforeCreate',
+    handler: (
+      this: ScriptContext,
+      params: ScriptDefinition,
+    ) => ScriptDefinition | Promise<ScriptDefinition>,
+  ): void;
+  off(
+    event: 'beforeUpdate',
+    handler: (
+      this: ScriptContext,
+      params: Partial<ScriptDefinition>,
+    ) => Partial<ScriptDefinition> | Promise<Partial<ScriptDefinition>>,
+  ): void;
+  off(
+    event: 'beforeRemove',
+    handler: (this: ScriptContext) => void | Promise<void>,
+  ): void;
+  off(
+    event: 'afterExecuted',
+    handler: (this: ScriptContext, data?: any) => void,
+  ): void;
+  off(
+    event: ScriptBowlEvent,
+    handler: (this: ScriptContext, ...args: any[]) => any,
+  ): void {
+    this.ee.off(event, handler);
   }
 
   private getLogs = (
@@ -163,6 +255,7 @@ export class ScriptBowl {
           script,
           fc: this.fc,
           serviceName: this.options.serviceName,
+          ee: this.ee,
           logger: {
             getLogs: this.getLogs,
           },

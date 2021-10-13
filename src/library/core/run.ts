@@ -19,5 +19,9 @@ export async function run(this: ScriptContext, payload?: any): Promise<any> {
       script,
       Buffer.from(JSON.stringify({payload}), 'binary'),
     )
-    .then(res => res.data);
+    .then(res =>
+      Promise.all(
+        this.ee.listeners('afterExecuted').map(listener => listener(res.data)),
+      ).then(() => res.data),
+    );
 }
