@@ -14,12 +14,15 @@ export type ScriptBowlEvent =
   | 'beforeUpdate'
   | 'beforeRemove';
 
-export interface ScriptBowlOptions extends ClientConfig {
+export interface ScriptBowlOptions extends Omit<ClientConfig, 'accessKeyID'> {
   accountId: string;
+  accessKeyId: string;
+  accessKeySecret: string;
   serviceName: string;
+  region: string;
   logger?:
     | {
-        accessKeyID?: string;
+        accessKeyId?: string;
         accessKeySecret?: string;
         /**
          * 日志服务与云函数 region 不一致时需设置
@@ -56,9 +59,12 @@ export class ScriptBowl {
   private sls: {getLogs: any} | undefined;
 
   constructor(private readonly options: ScriptBowlOptions) {
-    let {accountId, serviceName, ...clientOptions} = options;
+    let {accountId, serviceName, accessKeyId, ...clientOptions} = options;
 
-    let fc = new FCClient(accountId, clientOptions);
+    let fc = new FCClient(accountId, {
+      accessKeyID: accessKeyId,
+      ...clientOptions,
+    });
 
     let readyResolve!: () => void;
     this.ready = new Promise<void>(resolve => (readyResolve = resolve));
@@ -69,13 +75,13 @@ export class ScriptBowl {
 
         if (logConfig && options.logger !== false) {
           let {
-            accessKeyID = options.accessKeyID,
+            accessKeyId = options.accessKeyId,
             accessKeySecret = options.accessKeySecret,
             region = options.region,
           } = options.logger || {};
 
           this.sls = new ALY.SLS({
-            accessKeyId: accessKeyID,
+            accessKeyId,
             secretAccessKey: accessKeySecret,
             endpoint: `http://${region}.log.aliyuncs.com`,
             apiVersion: '2015-06-01',

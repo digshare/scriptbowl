@@ -10,8 +10,8 @@
 
 ```typescript
 new ScriptBowl({
-  accountId: '<AccountId>',
-  accessKeyID: '<AccessKeyID>',
+  accountId: '<AccountID>',
+  accessKeyId: '<AccessKeyID>',
   accessKeySecret: '<AccessKeySecret>',
   region: '<Region>',
   serviceName: '<ServiceName>',
@@ -240,7 +240,7 @@ interface ScriptBowlEventContext {
 ```typescript
 const scriptbowl = new ScriptBowl({
   accountId: '<AccountId>',
-  accessKeyID: '<AccessKeyID>',
+  accessKeyId: '<AccessKeyID>',
   accessKeySecret: '<AccessKeySecret>',
   region: '<Region>',
   serviceName: '<ServiceName>',
@@ -252,7 +252,7 @@ const scriptbowl = new ScriptBowl({
 ```
 
 - [accountId](https://fcnext.console.aliyun.com/overview) （右侧 常用信息-主账号 ID）
-- [accessKeyID & accessKeySecret](https://ram.console.aliyun.com/manage/ak)
+- [accessKeyId & accessKeySecret](https://ram.console.aliyun.com/manage/ak)
 
 ## 阿里云权限
 
