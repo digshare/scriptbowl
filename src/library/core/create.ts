@@ -1,11 +1,11 @@
-import {ScriptContext} from '../@context';
+import {ScriptBowlEventContext} from '../@context';
 import {uniqueId} from '../@utils';
 import {ScriptRuntime} from '../script';
 
 import {enable} from './disable';
 
 export async function create(
-  this: ScriptContext,
+  this: ScriptBowlEventContext,
   {
     runtime,
     entrance,

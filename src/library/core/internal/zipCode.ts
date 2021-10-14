@@ -1,11 +1,11 @@
 import JSZip from 'jszip';
 
-import {ScriptContext} from '../../@context';
+import {ScriptBowlEventContext} from '../../@context';
 import {generateScriptCodeZip} from '../../@utils';
 import {ScriptCode} from '../../script';
 
 export async function zipCode(
-  this: ScriptContext,
+  this: ScriptBowlEventContext,
   code: ScriptCode,
 ): Promise<string> {
   let zip = await generateScriptCodeZip(code);

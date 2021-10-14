@@ -1,4 +1,4 @@
-import {ScriptContext} from '../../@context';
+import {ScriptBowlEventContext} from '../../@context';
 import {ScriptBowl} from '../../bowl';
 import {Script} from '../../script';
 
@@ -10,7 +10,7 @@ export async function hook<
         type: 'beforeRemove';
         params: Parameters<Script['remove']>[number];
       },
->(this: ScriptContext, data: TData): Promise<TData['params']> {
+>(this: ScriptBowlEventContext, data: TData): Promise<TData['params']> {
   for (let listener of this.ee.listeners(data.type)) {
     data.params = (await listener.call(this, data.params)) as any;
   }

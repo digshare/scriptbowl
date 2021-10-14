@@ -1,8 +1,8 @@
-import {ScriptContext} from '../@context';
+import {ScriptBowlEventContext} from '../@context';
 import {ScriptLog} from '../script';
 
 export async function getLogs(
-  this: ScriptContext,
+  this: ScriptBowlEventContext,
   {
     from,
     to,

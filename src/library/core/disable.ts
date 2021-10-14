@@ -1,6 +1,6 @@
-import {ScriptContext} from '../@context';
+import {ScriptBowlEventContext} from '../@context';
 
-export async function disable(this: ScriptContext): Promise<boolean> {
+export async function disable(this: ScriptBowlEventContext): Promise<boolean> {
   let serviceName = this.serviceName;
   let scriptId = this.script!;
 
@@ -21,7 +21,7 @@ export async function disable(this: ScriptContext): Promise<boolean> {
   return true;
 }
 
-export async function enable(this: ScriptContext): Promise<boolean> {
+export async function enable(this: ScriptBowlEventContext): Promise<boolean> {
   let serviceName = this.serviceName;
   let scriptId = this.script!;
 

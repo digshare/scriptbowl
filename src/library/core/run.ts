@@ -1,6 +1,9 @@
-import {ScriptContext} from '../@context';
+import {ScriptBowlEventContext} from '../@context';
 
-export async function run(this: ScriptContext, payload?: any): Promise<any> {
+export async function run(
+  this: ScriptBowlEventContext,
+  payload?: any,
+): Promise<any> {
   let serviceName = this.serviceName;
   let script = this.script!;
 

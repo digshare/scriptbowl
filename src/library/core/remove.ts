@@ -1,6 +1,6 @@
-import {ScriptContext} from '../@context';
+import {ScriptBowlEventContext} from '../@context';
 
-export async function remove(this: ScriptContext): Promise<boolean> {
+export async function remove(this: ScriptBowlEventContext): Promise<boolean> {
   let serviceName = this.serviceName;
   let scriptId = this.script!;
 

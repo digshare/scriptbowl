@@ -33,7 +33,7 @@ new ScriptBowl({
 
 ### on(event, handler)
 
-监听 scriptbowl 生命周期事件, 事件函数 `this` 默认指向 `ScriptContext`
+监听 scriptbowl 生命周期事件, 事件函数 `this` 默认指向 `ScriptBowlEventContext`
 
 event 类型有:
 
@@ -194,9 +194,23 @@ interface ScriptLog {
 }
 ```
 
+### ScriptBowlEventContext
+
+scriptbowl 事件执行上下文
+
+```typescript
+interface ScriptBowlEventContext {
+  serviceName: string;
+  script: string | undefined;
+  fc: FCClient;
+  ee: EventEmitter<ScriptBowlEvent>;
+  logger: ScriptLogger;
+}
+```
+
 ### ScriptRuntime
 
-脚本执行环境
+创建脚本时可选择的执行环境
 
 - nodejs10
 
@@ -215,7 +229,7 @@ interface ScriptLog {
 
 ## 使用步骤
 
-1. 在 [阿里云创建服务](https://fcnext.console.aliyun.com/cn-shenzhen/services) (如需 get 脚本执行日志请在创建时启用日志功能)
+1. 在 [阿里云创建服务](https://fcnext.console.aliyun.com/cn-shenzhen/services) (如需获取脚本执行日志请在创建时启用日志功能)
 2. 进入服务详情, 复制必要信息待用 (点击字段右侧有复制按钮)
    1. 基础信息-地域
    2. 日志配置-日志项目

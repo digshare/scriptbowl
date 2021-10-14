@@ -1,10 +1,10 @@
-import {ScriptContext} from '../@context';
+import {ScriptBowlEventContext} from '../@context';
 import {ScriptRuntime} from '../script';
 
 import {disable, enable} from './disable';
 
 export async function update(
-  this: ScriptContext,
+  this: ScriptBowlEventContext,
   {
     runtime,
     entrance,

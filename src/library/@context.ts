@@ -3,7 +3,7 @@ import EventEmitter from 'eventemitter3';
 
 import {ScriptBowlEvent, ScriptLogger} from './bowl';
 
-export interface ScriptContext {
+export interface ScriptBowlEventContext {
   serviceName: string;
   script: string | undefined;
   fc: FCClient;

@@ -3,7 +3,7 @@ import ALY from 'aliyun-sdk';
 import EventEmitter from 'eventemitter3';
 import JSZip from 'jszip';
 
-import {ScriptContext} from './@context';
+import {ScriptBowlEventContext} from './@context';
 import {Core} from './core';
 import {Script, ScriptDefinition, ScriptLog} from './script';
 
@@ -137,66 +137,72 @@ export class ScriptBowl {
 
   on(
     event: 'transformScriptCode',
-    handler: (this: ScriptContext, zip: JSZip) => JSZip | Promise<JSZip>,
+    handler: (
+      this: ScriptBowlEventContext,
+      zip: JSZip,
+    ) => JSZip | Promise<JSZip>,
   ): void;
   on(
     event: 'beforeCreate',
     handler: (
-      this: ScriptContext,
+      this: ScriptBowlEventContext,
       params: ScriptDefinition,
     ) => ScriptDefinition | Promise<ScriptDefinition>,
   ): void;
   on(
     event: 'beforeUpdate',
     handler: (
-      this: ScriptContext,
+      this: ScriptBowlEventContext,
       params: Partial<ScriptDefinition>,
     ) => Partial<ScriptDefinition> | Promise<Partial<ScriptDefinition>>,
   ): void;
   on(
     event: 'beforeRemove',
-    handler: (this: ScriptContext) => void | Promise<void>,
+    handler: (this: ScriptBowlEventContext) => void | Promise<void>,
   ): void;
   on(
     event: 'afterExecuted',
-    handler: (this: ScriptContext, data?: any) => void,
+    handler: (this: ScriptBowlEventContext, data?: any) => void,
   ): void;
   on(
     event: ScriptBowlEvent,
-    handler: (this: ScriptContext, ...args: any[]) => any,
+    handler: (this: ScriptBowlEventContext, ...args: any[]) => any,
   ): void {
     this.ee.on(event, handler);
   }
 
   off(
     event: 'transformScriptCode',
-    handler: (this: ScriptContext, zip: JSZip) => JSZip | Promise<JSZip>,
+    handler: (
+      this: ScriptBowlEventContext,
+      zip: JSZip,
+    ) => JSZip | Promise<JSZip>,
   ): void;
   off(
     event: 'beforeCreate',
     handler: (
-      this: ScriptContext,
+      this: ScriptBowlEventContext,
       params: ScriptDefinition,
     ) => ScriptDefinition | Promise<ScriptDefinition>,
   ): void;
   off(
     event: 'beforeUpdate',
     handler: (
-      this: ScriptContext,
+      this: ScriptBowlEventContext,
       params: Partial<ScriptDefinition>,
     ) => Partial<ScriptDefinition> | Promise<Partial<ScriptDefinition>>,
   ): void;
   off(
     event: 'beforeRemove',
-    handler: (this: ScriptContext) => void | Promise<void>,
+    handler: (this: ScriptBowlEventContext) => void | Promise<void>,
   ): void;
   off(
     event: 'afterExecuted',
-    handler: (this: ScriptContext, data?: any) => void,
+    handler: (this: ScriptBowlEventContext, data?: any) => void,
   ): void;
   off(
     event: ScriptBowlEvent,
-    handler: (this: ScriptContext, ...args: any[]) => any,
+    handler: (this: ScriptBowlEventContext, ...args: any[]) => any,
   ): void {
     this.ee.off(event, handler);
   }
@@ -250,7 +256,7 @@ export class ScriptBowl {
     data: any;
   }): Promise<T> => {
     return this.ready.then(() =>
-      Core[type as keyof typeof Core].call<ScriptContext, any[], any>(
+      Core[type as keyof typeof Core].call<ScriptBowlEventContext, any[], any>(
         {
           script,
           fc: this.fc,
