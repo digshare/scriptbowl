@@ -1,12 +1,10 @@
 # scriptbowl
 
-本质上是对 阿里云-函数计算 (FC) API 的封装
+本质上是对 [阿里云-函数计算 (FC)](https://fcnext.console.aliyun.com/overview) [API](https://help.aliyun.com/document_detail/51883.html) 的封装
 
-### Class
+## ScriptBowl
 
-#### ScriptBowl
-
-##### constructor(options: ScriptBowlOptions)
+### constructor(options: ScriptBowlOptions)
 
 创建 scriptbowl 实例
 
@@ -21,19 +19,19 @@ new ScriptBowl({
 });
 ```
 
-##### get(id: string): Promise<Script | undefined>
+### get(id)
 
 通过 ID 获取脚本
 
-##### require(id: string): Promise<Script\>
+### require(id)
 
 `get` 的封装, 脚本不存在将抛出错误
 
-##### create(script: ScriptDefinition): Promise<Script\>
+### create(definition)
 
 创建脚本
 
-##### on(event: ScriptBowlEvent, handler): void
+### on(event, handler)
 
 监听 scriptbowl 生命周期事件, 事件函数 `this` 默认指向 `ScriptContext`
 
@@ -49,44 +47,44 @@ event 类型有:
 
 - `beforeRemove` 脚本移除前
 
-##### off(event: ScriptBowlEvent, handler): void
+### off(event, handler)
 
 解除绑定
 
-#### Script
+## Script
 
 通过 scriptbowl 取得的脚本
 
-##### update(params: Partial<ScriptDefinition\>): Promise<void\>
+### update(definition)
 
 更新脚本
 
-##### run(payload?: any): Promise<any\>
+### run(payload)
 
 执行脚本
 
-##### enable(): Promise<void\>
+### enable()
 
 启用脚本
 
-##### disable(): Promise<void\>
+### disable()
 
 禁用脚本
 
-##### remove(): Promise<void\>
+### remove()
 
 移除脚本
 
-##### getLogs(from:number, to?: number): Promise<ScriptLog\>
+### getLogs(from, to?)
 
 获取脚本执行日志, 如获取最近一分钟的日志 `script.getLogs(Date.now - 60 * 1000)`
 
 - from 起始时间
 - to 截至时间，默认 `Date.now()`
 
-### Types
+## Types
 
-#### ScriptDefinition
+### ScriptDefinition
 
 脚本定义内容
 
@@ -115,11 +113,11 @@ interface ScriptDefinition<TMeta extends any = any> {
 }
 ```
 
-#### ScriptCode
+### ScriptCode
 
 脚本文件支持的类型
 
-##### FilesScriptCode
+#### FilesScriptCode
 
 通过对象声明脚本文件
 
@@ -143,7 +141,7 @@ interface ScriptFileDeclare {
 }
 ```
 
-##### DirectoryScriptCode
+#### DirectoryScriptCode
 
 指定本机文件夹作为脚本文件
 
@@ -154,7 +152,7 @@ export interface DirectoryScriptCode {
 }
 ```
 
-##### ZipScriptCode
+#### ZipScriptCode
 
 指定本地或网络 zip 包作为脚本文件
 
@@ -165,7 +163,7 @@ export interface ZipScriptCode {
 }
 ```
 
-##### GithubScriptCode
+#### GithubScriptCode
 
 指定 Github 仓库作为脚本文件 （暂只支持公开仓库）
 
@@ -185,7 +183,7 @@ export interface GithubScriptCode {
 }
 ```
 
-#### ScriptLog
+### ScriptLog
 
 脚本日志内容
 
@@ -196,7 +194,7 @@ interface ScriptLog {
 }
 ```
 
-#### ScriptRuntime
+### ScriptRuntime
 
 脚本执行环境
 
@@ -215,7 +213,7 @@ interface ScriptLog {
 - php7.2
 - 自定义
 
-### 使用步骤
+## 使用步骤
 
 1. 在 [阿里云创建服务](https://fcnext.console.aliyun.com/cn-shenzhen/services) (如需 get 脚本执行日志请在创建时启用日志功能)
 2. 进入服务详情, 复制必要信息待用 (点击字段右侧有复制按钮)
@@ -241,6 +239,50 @@ const scriptbowl = new ScriptBowl({
 
 - [accountId](https://fcnext.console.aliyun.com/overview) （右侧 常用信息-主账号 ID）
 - [accessKeyID & accessKeySecret](https://ram.console.aliyun.com/manage/ak)
+
+## 阿里云权限
+
+建议的最小权限
+
+- RAM 用户权限策略
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Action": ["log:Get*", "log:List*"],
+      "Resource": "acs:log:<地区>:*:project/<日志项目>/logstore/<日志仓库>",
+      "Effect": "Allow"
+    },
+    {
+      "Action": "fc:GetService",
+      "Resource": "acs:fc:<地区>:*:services/<服务名称>",
+      "Effect": "Allow"
+    },
+    {
+      "Action": "fc:*",
+      "Resource": "acs:fc:<地区>:*:services/<服务名称>/functions/*",
+      "Effect": "Allow"
+    }
+  ]
+}
+```
+
+- 云函数服务角色权限策略
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Action": ["log:PostLogStoreLogs"],
+      "Resource": "acs:log:<地区>:*:project/<日志项目>/logstore/<日志仓库>",
+      "Effect": "Allow"
+    }
+  ]
+}
+```
 
 ## License
 
