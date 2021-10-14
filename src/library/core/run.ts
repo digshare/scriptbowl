@@ -21,7 +21,9 @@ export async function run(this: ScriptContext, payload?: any): Promise<any> {
     )
     .then(res =>
       Promise.all(
-        this.ee.listeners('afterExecuted').map(listener => listener(res.data)),
+        this.ee
+          .listeners('afterExecuted')
+          .map(listener => listener.call(this, res.data)),
       ).then(() => res.data),
     );
 }
