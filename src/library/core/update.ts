@@ -73,7 +73,15 @@ export async function update(
     }),
   });
 
-  if (cron) {
+  let disableChanged =
+    disableValue !== undefined && disableValue !== definition.disable;
+
+  if (
+    cron &&
+    cron !== definition.cron &&
+    !disableChanged &&
+    !definition.disable
+  ) {
     try {
       // 尝试更新,更新失败就创建
       await this.fc.updateTrigger(serviceName, scriptId, scriptId, {
@@ -94,7 +102,7 @@ export async function update(
     }
   }
 
-  if (disableValue !== undefined && disableValue !== definition.disable) {
+  if (disableChanged) {
     if (disableValue) {
       await disable.call(this);
     } else {
