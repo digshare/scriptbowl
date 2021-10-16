@@ -74,12 +74,24 @@ export async function update(
   });
 
   if (cron) {
-    await this.fc.updateTrigger(serviceName, scriptId, scriptId, {
-      triggerConfig: {
-        cronExpression: cron,
-        enabled: true,
-      },
-    });
+    try {
+      // 尝试更新,更新失败就创建
+      await this.fc.updateTrigger(serviceName, scriptId, scriptId, {
+        triggerConfig: {
+          cronExpression: cron,
+          enabled: true,
+        },
+      });
+    } catch (error) {
+      await this.fc.createTrigger(serviceName, scriptId, {
+        triggerName: scriptId,
+        triggerType: 'timer',
+        triggerConfig: {
+          cronExpression: cron,
+          enabled: true,
+        },
+      });
+    }
   }
 
   if (disableValue !== undefined && disableValue !== definition.disable) {
