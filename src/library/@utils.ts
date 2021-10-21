@@ -1,6 +1,7 @@
 import * as FS from 'fs/promises';
 import * as Path from 'path';
 
+import {TriggerConfig} from '@forker/fc2';
 import JSZip from 'jszip';
 import {customAlphabet} from 'nanoid';
 import fetch from 'node-fetch';
@@ -10,6 +11,7 @@ import {
   FilesScriptCode,
   GithubScriptCode,
   ScriptCode,
+  ScriptCron,
 } from './script';
 
 const nanoid = customAlphabet('abcdefghijk', 32);
@@ -135,4 +137,45 @@ export async function zipDirectory({
 
     return results;
   }
+}
+
+export function isSameScriptCron(
+  cronA: ScriptCron,
+  cronB: ScriptCron,
+): boolean {
+  try {
+    if (typeof cronA === 'string') {
+      return cronA === cronB;
+    } else {
+      return (
+        typeof cronB === 'object' &&
+        cronA.expression === cronB.expression &&
+        JSON.stringify(cronA.payload) === JSON.stringify(cronB.payload)
+      );
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+export function payloadToString(payload: any): string {
+  return JSON.stringify({payload});
+}
+
+export function buildTriggerConfig(cron: ScriptCron): TriggerConfig {
+  let cronExpression: string;
+  let cronPayload: any;
+
+  if (typeof cron === 'string') {
+    cronExpression = cron;
+  } else {
+    cronExpression = cron.expression;
+    cronPayload = payloadToString(cron.payload);
+  }
+
+  return {
+    payload: cronPayload,
+    cronExpression,
+    enabled: true,
+  };
 }

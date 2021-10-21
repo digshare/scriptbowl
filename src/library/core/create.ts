@@ -1,6 +1,6 @@
 import {ScriptBowlEventContext} from '../@context';
 import {uniqueId} from '../@utils';
-import {ScriptRuntime} from '../script';
+import {ScriptCron, ScriptRuntime} from '../script';
 
 import {enable} from './disable';
 
@@ -18,7 +18,7 @@ export async function create(
     runtime: ScriptRuntime;
     entrance: string;
     content: string;
-    cron?: string;
+    cron?: ScriptCron;
     timeout?: number;
     disable?: boolean;
     meta?: any;

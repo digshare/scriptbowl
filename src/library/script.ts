@@ -54,6 +54,13 @@ export type ScriptRuntime =
   | 'java11'
   | 'php7.2';
 
+export type ScriptCron =
+  | string
+  | {
+      expression: string;
+      payload: any;
+    };
+
 export interface ScriptDefinition<TMeta extends any = any> {
   runtime: ScriptRuntime;
   /**
@@ -68,7 +75,7 @@ export interface ScriptDefinition<TMeta extends any = any> {
    * 定时执行 cron 表达式
    * https://help.aliyun.com/document_detail/171746.html#p-ouc-hsc-kjo
    */
-  cron?: string;
+  cron?: ScriptCron;
   /**
    * 执行超时时间（秒）
    */

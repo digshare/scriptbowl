@@ -1,4 +1,5 @@
 import {ScriptBowlEventContext} from '../@context';
+import {buildTriggerConfig} from '../@utils';
 
 export async function disable(this: ScriptBowlEventContext): Promise<boolean> {
   let serviceName = this.serviceName;
@@ -39,10 +40,7 @@ export async function enable(this: ScriptBowlEventContext): Promise<boolean> {
     await this.fc.createTrigger(serviceName, scriptId, {
       triggerName: scriptId,
       triggerType: 'timer',
-      triggerConfig: {
-        cronExpression: cron,
-        enabled: true,
-      },
+      triggerConfig: buildTriggerConfig(cron),
     });
   }
 

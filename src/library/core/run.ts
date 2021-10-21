@@ -1,4 +1,5 @@
 import {ScriptBowlEventContext} from '../@context';
+import {payloadToString} from '../@utils';
 
 export async function run(
   this: ScriptBowlEventContext,
@@ -20,7 +21,7 @@ export async function run(
     .invokeFunction(
       serviceName,
       script,
-      Buffer.from(JSON.stringify({payload}), 'binary'),
+      Buffer.from(payloadToString(payload), 'binary'),
     )
     .then(res =>
       Promise.all(

@@ -103,7 +103,7 @@ interface ScriptDefinition<TMeta extends any = any> {
    * 定时执行 cron 表达式
    * https://help.aliyun.com/document_detail/171746.html#p-ouc-hsc-kjo
    */
-  cron?: string;
+  cron?: ScriptCron;
   /**
    * 执行超时时间（秒）
    */
@@ -111,6 +111,20 @@ interface ScriptDefinition<TMeta extends any = any> {
   disable?: boolean;
   meta?: TMeta;
 }
+```
+
+### ScriptCron
+
+定时触发器定义格式
+
+```typescript
+type ScriptCron =
+  // expression string
+  | string
+  | {
+      expression: string;
+      payload: any;
+    };
 ```
 
 ### ScriptCode

@@ -1,5 +1,6 @@
 import {ScriptBowlEventContext} from '../@context';
-import {ScriptRuntime} from '../script';
+import {buildTriggerConfig, isSameScriptCron} from '../@utils';
+import {ScriptCron, ScriptRuntime} from '../script';
 
 import {disable, enable} from './disable';
 
@@ -17,7 +18,7 @@ export async function update(
     runtime?: ScriptRuntime;
     entrance?: string;
     content?: string;
-    cron?: string;
+    cron?: ScriptCron;
     timeout?: number;
     disable?: boolean;
     meta?: any;
@@ -78,26 +79,20 @@ export async function update(
 
   if (
     cron &&
-    cron !== definition.cron &&
+    !isSameScriptCron(cron, definition.cron) &&
     !disableChanged &&
     !definition.disable
   ) {
     try {
       // 尝试更新,更新失败就创建
       await this.fc.updateTrigger(serviceName, scriptId, scriptId, {
-        triggerConfig: {
-          cronExpression: cron,
-          enabled: true,
-        },
+        triggerConfig: buildTriggerConfig(cron),
       });
     } catch (error) {
       await this.fc.createTrigger(serviceName, scriptId, {
         triggerName: scriptId,
         triggerType: 'timer',
-        triggerConfig: {
-          cronExpression: cron,
-          enabled: true,
-        },
+        triggerConfig: buildTriggerConfig(cron),
       });
     }
   }
