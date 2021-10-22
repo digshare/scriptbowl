@@ -21,7 +21,7 @@ export async function run(
     .invokeFunction(
       serviceName,
       script,
-      Buffer.from(payloadToString(payload), 'binary'),
+      Buffer.from(payloadToString(payload), 'utf8'),
     )
     .then(res =>
       Promise.all(
