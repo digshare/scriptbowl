@@ -33,7 +33,12 @@ export interface ScriptBowlOptions extends Omit<ClientConfig, 'accessKeyID'> {
 }
 
 export interface ScriptLogger {
-  getLogs(script: string, from: number, to: number): Promise<ScriptLog[]>;
+  getLogs(
+    script: string,
+    from: number,
+    to: number,
+    reverse?: boolean,
+  ): Promise<ScriptLog[]>;
 }
 
 export interface IScriptBowl {
@@ -217,6 +222,7 @@ export class ScriptBowl {
     script: string,
     from: number,
     to: number,
+    reverse = false,
   ): Promise<ScriptLog[]> => {
     let logConfig = this.logConfig;
 
@@ -235,6 +241,7 @@ export class ScriptBowl {
           to: Math.round(to / 1000),
           topic: this.options.serviceName,
           query: `functionName=${script}`,
+          reverse,
         },
         (error: unknown, data: any) => {
           if (error) {

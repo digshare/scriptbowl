@@ -153,8 +153,12 @@ export class Script {
     return !!(await this._update('remove'));
   }
 
-  async getLogs(from: number, to: number = Date.now()): Promise<ScriptLog[]> {
-    return this._update('getLogs', {from, to});
+  async getLogs(
+    from: number,
+    to: number = Date.now(),
+    reverse = false,
+  ): Promise<ScriptLog[]> {
+    return this._update('getLogs', {from, to, reverse});
   }
 
   private async _update<T>(type: string, data?: any): Promise<T> {
