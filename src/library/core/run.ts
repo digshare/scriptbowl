@@ -21,7 +21,12 @@ export async function run(
     .invokeFunction(
       serviceName,
       script,
-      Buffer.from(payloadToString(payload), 'utf8'),
+      /**
+       * 这儿的套娃原因：
+       * 定时器触发会把 payload 包裹在一个对象的 payload 字段里
+       * 为了使用统一，我们这也包一层
+       */
+      Buffer.from(payloadToString({payload: payloadToString(payload)}), 'utf8'),
     )
     .then(res =>
       Promise.all(

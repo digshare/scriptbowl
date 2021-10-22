@@ -159,7 +159,7 @@ export function isSameScriptCron(
 }
 
 export function payloadToString(payload: any): string {
-  return JSON.stringify({payload});
+  return JSON.stringify(payload);
 }
 
 export function buildTriggerConfig(cron: ScriptCron): TriggerConfig {
