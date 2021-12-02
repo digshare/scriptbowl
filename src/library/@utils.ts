@@ -2,6 +2,7 @@ import * as FS from 'fs/promises';
 import * as Path from 'path';
 
 import {TriggerConfig} from '@forker/fc2';
+import {HttpsProxyAgent} from 'https-proxy-agent';
 import JSZip from 'jszip';
 import {customAlphabet} from 'nanoid';
 import fetch from 'node-fetch';
@@ -20,7 +21,14 @@ export function uniqueId(): string {
   return nanoid();
 }
 
-export async function generateScriptCodeZip(code: ScriptCode): Promise<JSZip> {
+export interface FetchZipOptions {
+  proxyAgent?: HttpsProxyAgent | string;
+}
+
+export async function generateScriptCodeZip(
+  code: ScriptCode,
+  options: FetchZipOptions = {},
+): Promise<JSZip> {
   let zip: JSZip;
 
   switch (code.type) {
@@ -31,13 +39,13 @@ export async function generateScriptCodeZip(code: ScriptCode): Promise<JSZip> {
       zip = await zipDirectory(code);
       break;
     case 'github':
-      zip = await fetchGithubCode(code);
+      zip = await fetchGithubCode(code, options);
       break;
     case 'local-zip':
       zip = await readZipFile(code.zipPath);
       break;
     case 'remote-zip':
-      zip = await fetchZipFile(code.zipPath);
+      zip = await fetchZipFile(code.zipPath, options);
       break;
   }
 
@@ -58,18 +66,30 @@ export async function zipFiles({files}: FilesScriptCode): Promise<JSZip> {
   return zip;
 }
 
-export async function fetchGithubCode({
-  owner,
-  project,
-  branch = 'main',
-}: GithubScriptCode): Promise<JSZip> {
+export async function fetchGithubCode(
+  {owner, project, branch = 'main'}: GithubScriptCode,
+  options: FetchZipOptions,
+): Promise<JSZip> {
   return fetchZipFile(
     `https://github.com/${owner}/${project}/archive/refs/heads/${branch}.zip`,
+    options,
   );
 }
 
-export async function fetchZipFile(url: string): Promise<JSZip> {
-  return fetch(url)
+export async function fetchZipFile(
+  url: string,
+  options: FetchZipOptions,
+): Promise<JSZip> {
+  return fetch(url, {
+    ...(options.proxyAgent
+      ? {
+          agent:
+            typeof options.proxyAgent === 'string'
+              ? new HttpsProxyAgent(options.proxyAgent)
+              : options.proxyAgent,
+        }
+      : {}),
+  })
     .then(res => res.buffer())
     .then(buffer => new JSZip().loadAsync(buffer));
 }
