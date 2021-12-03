@@ -47,6 +47,8 @@ export async function generateScriptCodeZip(
     case 'remote-zip':
       zip = await fetchZipFile(code.zipPath, options);
       break;
+    case 'js-zip':
+      zip = code.zip;
   }
 
   return zip;

@@ -1,4 +1,5 @@
 import EventEmitter from 'eventemitter3';
+import JSZip from 'jszip';
 
 export type ScriptFile =
   | string // file path
@@ -29,6 +30,11 @@ export interface ZipScriptCode {
   zipPath: string;
 }
 
+export interface ZippedScriptCode {
+  type: 'js-zip';
+  zip: JSZip;
+}
+
 export interface GithubScriptCode {
   type: 'github';
   owner: string;
@@ -43,6 +49,7 @@ export type ScriptCode =
   | FilesScriptCode
   | DirectoryScriptCode
   | ZipScriptCode
+  | ZippedScriptCode
   | GithubScriptCode;
 
 export type ScriptRuntime =
