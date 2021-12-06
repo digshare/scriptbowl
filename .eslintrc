@@ -13,6 +13,10 @@
       "parserOptions": {
         "project": "**/tsconfig.json"
       }
+    },
+    {
+      "files": ["src/test/**/*.{ts,tsx}"],
+      "extends": ["plugin:@mufan/override-dev"]
     }
   ]
 }
