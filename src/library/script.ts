@@ -55,6 +55,7 @@ export type ScriptCode =
 export type ScriptRuntime =
   | 'nodejs10'
   | 'nodejs12'
+  | 'nodejs14'
   | 'python2.7'
   | 'python3'
   | 'java8'
@@ -157,7 +158,14 @@ export class Script {
       params: undefined,
     });
 
-    return !!(await this._update('remove'));
+    let result = !!(await this._update('remove'));
+
+    await this._update('hook', {
+      type: 'afterRemove',
+      params: undefined,
+    });
+
+    return result;
   }
 
   async getLogs(

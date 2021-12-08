@@ -4,15 +4,18 @@ import EventEmitter from 'eventemitter3';
 import JSZip from 'jszip';
 
 import {ScriptBowlEventContext} from './@context';
+import {extractServiceIndexFromScript, markServiceNameIndex} from './@utils';
 import {Core} from './core';
 import {Script, ScriptDefinition, ScriptLog} from './script';
+import {ServicesManager, ServicesManagerOptions} from './service';
 
 export type ScriptBowlEvent =
   | 'transformScriptCode'
   | 'afterExecuted'
   | 'beforeCreate'
   | 'beforeUpdate'
-  | 'beforeRemove';
+  | 'beforeRemove'
+  | 'afterRemove';
 
 export interface ScriptBowlOptions extends Omit<ClientConfig, 'accessKeyID'> {
   accountId: string;
@@ -20,6 +23,11 @@ export interface ScriptBowlOptions extends Omit<ClientConfig, 'accessKeyID'> {
   accessKeySecret: string;
   serviceName: string;
   region: string;
+  /**
+   * 多服务模式
+   * 自动创建管理 service, 需要更多权限
+   */
+  multiServices?: ServicesManagerOptions | true;
   logger?:
     | {
         accessKeyId?: string;
@@ -48,56 +56,41 @@ export interface IScriptBowl {
 }
 
 export class ScriptBowl {
+  readonly ready: Promise<any>;
+
   private ee = new EventEmitter<ScriptBowlEvent>();
-
-  private ready: Promise<void>;
-
-  private logConfig:
-    | {
-        project: string;
-        logstore: string;
-      }
-    | undefined;
 
   private readonly fc: FCClient;
 
-  private sls: {getLogs: any} | undefined;
+  private readonly sm: ServicesManager | undefined;
 
   constructor(private readonly options: ScriptBowlOptions) {
-    let {accountId, serviceName, accessKeyId, ...clientOptions} = options;
+    let {accountId, serviceName, accessKeyId, multiServices, ...clientOptions} =
+      options;
 
     let fc = new FCClient(accountId, {
       accessKeyID: accessKeyId,
       ...clientOptions,
     });
 
-    let readyResolve!: () => void;
-    this.ready = new Promise<void>(resolve => (readyResolve = resolve));
+    let sm: ServicesManager | undefined;
 
-    fc.getService(serviceName)
-      .then(({data: {logConfig}}: any) => {
-        this.logConfig = logConfig;
+    if (multiServices) {
+      sm = new ServicesManager(
+        fc,
+        serviceName,
+        typeof multiServices === 'boolean' ? {} : multiServices,
+      );
 
-        if (logConfig && options.logger !== false) {
-          let {
-            accessKeyId = options.accessKeyId,
-            accessKeySecret = options.accessKeySecret,
-            region = options.region,
-          } = options.logger || {};
+      this.on('afterRemove', function () {
+        return sm!.remand(this.serviceName);
+      });
+    }
 
-          this.sls = new ALY.SLS({
-            accessKeyId,
-            secretAccessKey: accessKeySecret,
-            endpoint: `http://${region}.log.aliyuncs.com`,
-            apiVersion: '2015-06-01',
-          });
-        }
-
-        readyResolve();
-      })
-      .catch(console.error);
+    this.ready = sm ? sm.ready : fc.getService(serviceName);
 
     this.fc = fc;
+    this.sm = sm;
   }
 
   async create(params: ScriptDefinition): Promise<Script> {
@@ -126,6 +119,14 @@ export class ScriptBowl {
   }
 
   async get(id: string): Promise<Script | undefined> {
+    try {
+      return await this.require(id);
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  async require(id: string): Promise<Script> {
     await this.request<ScriptDefinition | undefined>({
       script: id,
       type: 'get',
@@ -133,17 +134,8 @@ export class ScriptBowl {
         id,
       },
     });
+
     return new Script(id, this.request);
-  }
-
-  async require(id: string): Promise<Script> {
-    let script = await this.get(id);
-
-    if (!script) {
-      throw Error('Not found script');
-    }
-
-    return script;
   }
 
   on(
@@ -168,7 +160,7 @@ export class ScriptBowl {
     ) => Partial<ScriptDefinition> | Promise<Partial<ScriptDefinition>>,
   ): void;
   on(
-    event: 'beforeRemove',
+    event: 'beforeRemove' | 'afterRemove',
     handler: (this: ScriptBowlEventContext) => void | Promise<void>,
   ): void;
   on(
@@ -204,7 +196,7 @@ export class ScriptBowl {
     ) => Partial<ScriptDefinition> | Promise<Partial<ScriptDefinition>>,
   ): void;
   off(
-    event: 'beforeRemove',
+    event: 'beforeRemove' | 'afterRemove',
     handler: (this: ScriptBowlEventContext) => void | Promise<void>,
   ): void;
   off(
@@ -224,22 +216,38 @@ export class ScriptBowl {
     to: number,
     reverse = false,
   ): Promise<ScriptLog[]> => {
-    let logConfig = this.logConfig;
+    return new Promise(async (resolve, reject) => {
+      let serviceName = await this.getServiceName(script);
 
-    if (!logConfig) {
-      throw Error('Service not include log config');
-    }
+      let {logConfig} = Object((await this.fc.getService(serviceName)).data);
 
-    let {project, logstore} = logConfig;
+      if (!logConfig) {
+        throw Error('Service not include log config');
+      }
 
-    return new Promise((resolve, reject) => {
-      this.sls?.getLogs(
+      let options = this.options;
+      let {
+        accessKeyId = options.accessKeyId,
+        accessKeySecret = options.accessKeySecret,
+        region = options.region,
+      } = options.logger || {};
+
+      let sls = new ALY.SLS({
+        accessKeyId,
+        secretAccessKey: accessKeySecret,
+        endpoint: `http://${region}.log.aliyuncs.com`,
+        apiVersion: '2015-06-01',
+      });
+
+      let {project, logstore} = logConfig;
+
+      sls.getLogs(
         {
           projectName: project,
           logStoreName: logstore,
           from: Math.round(from / 1000),
           to: Math.round(to / 1000),
-          topic: this.options.serviceName,
+          topic: serviceName,
           query: `functionName=${script}`,
           reverse,
         },
@@ -268,19 +276,41 @@ export class ScriptBowl {
     type: string;
     data: any;
   }): Promise<T> => {
-    return this.ready.then(() =>
-      Core[type as keyof typeof Core].call<ScriptBowlEventContext, any[], any>(
+    return this.ready.then(async () => {
+      let serviceName = await this.getServiceName(script);
+
+      return Core[type as keyof typeof Core].call<
+        ScriptBowlEventContext,
+        any[],
+        any
+      >(
         {
           script,
+          serviceName,
           fc: this.fc,
-          serviceName: this.options.serviceName,
           ee: this.ee,
           logger: {
             getLogs: this.getLogs,
           },
         },
         data as any,
-      ),
-    );
+      );
+    });
   };
+
+  private async getServiceName(scriptId: string | undefined): Promise<string> {
+    let {serviceName, multiServices} = this.options;
+
+    if (!multiServices) {
+      return serviceName;
+    }
+
+    // 除了新增脚本，其他情况都会有 scriptId
+    return markServiceNameIndex(
+      serviceName,
+      scriptId
+        ? extractServiceIndexFromScript(scriptId)
+        : await this.sm!.consume(),
+    );
+  }
 }

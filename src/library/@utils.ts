@@ -15,10 +15,77 @@ import {
   ScriptCron,
 } from './script';
 
-const nanoid = customAlphabet('abcdefghijk', 32);
+const SCRIPT_HEAD_CHAR = 'f';
+const SERVICE_INDEX_STRING_LENGTH = 4;
 
-export function uniqueId(): string {
-  return nanoid();
+const scriptId = customAlphabet('opqrstuvwxyz', 8);
+
+function hexIndex(index: number): string {
+  let hexIndexString = index.toString(16);
+
+  if (hexIndexString.length > SERVICE_INDEX_STRING_LENGTH) {
+    throw Error(
+      `Services index cannot max than \`${Array(SERVICE_INDEX_STRING_LENGTH)
+        .fill('F')
+        .join('')}\``,
+    );
+  }
+
+  return `${Array(SERVICE_INDEX_STRING_LENGTH)
+    .fill(0)
+    .join('')}${hexIndexString}`.slice(-SERVICE_INDEX_STRING_LENGTH);
+}
+
+export function createScriptId(serviceName: string): string {
+  let serviceIndex = extractServiceIndexFromService(serviceName);
+
+  // length 1+ (0 | SERVICE_INDEX_STRING_LENGTH) + 8
+  return `${SCRIPT_HEAD_CHAR}${
+    serviceIndex !== undefined ? hexIndex(serviceIndex) : ''
+  }${scriptId()}`;
+}
+
+export function extractServiceIndexFromScript(
+  scriptId: string,
+): number | undefined {
+  let index = parseInt(
+    scriptId.slice(
+      SCRIPT_HEAD_CHAR.length,
+      SCRIPT_HEAD_CHAR.length + SERVICE_INDEX_STRING_LENGTH,
+    ),
+    16,
+  );
+
+  return !isNaN(index) ? index : undefined;
+}
+
+export function extractServiceIndexFromService(
+  serviceName: string,
+): number | undefined {
+  let hexIndex = serviceName.split('-')[1];
+
+  if (!hexIndex) {
+    return undefined;
+  }
+
+  let index = parseInt(hexIndex, 16);
+
+  return !isNaN(index) ? index : undefined;
+}
+
+export function markServiceNameIndex(
+  serviceName: string,
+  index: number | undefined,
+): string {
+  if (index === undefined) {
+    return serviceName;
+  }
+
+  return `${serviceName}-${hexIndex(index)}`;
+}
+
+export function getRoleARN(accountId: string, roleName: string): string {
+  return `acs:ram::${accountId}:role/${roleName.toLowerCase()}`;
 }
 
 export interface FetchZipOptions {

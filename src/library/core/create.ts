@@ -1,5 +1,5 @@
 import {ScriptBowlEventContext} from '../@context';
-import {uniqueId} from '../@utils';
+import {createScriptId} from '../@utils';
 import {ScriptCron, ScriptRuntime} from '../script';
 
 import {enable} from './disable';
@@ -25,7 +25,7 @@ export async function create(
   },
 ): Promise<string> {
   let serviceName = this.serviceName;
-  let scriptId = uniqueId();
+  let scriptId = createScriptId(serviceName);
 
   await this.fc.createFunction(serviceName, {
     functionName: scriptId,

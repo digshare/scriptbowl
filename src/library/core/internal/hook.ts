@@ -7,7 +7,7 @@ export async function hook<
     | {type: 'beforeCreate'; params: Parameters<ScriptBowl['create']>[0]}
     | {type: 'beforeUpdate'; params: Parameters<Script['update']>[0]}
     | {
-        type: 'beforeRemove';
+        type: 'beforeRemove' | 'afterRemove';
         params: Parameters<Script['remove']>[number];
       },
 >(this: ScriptBowlEventContext, data: TData): Promise<TData['params']> {

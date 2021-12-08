@@ -2,6 +2,188 @@
 
 本质上是对 [阿里云-函数计算 (FC)](https://fcnext.console.aliyun.com/overview) [API](https://help.aliyun.com/document_detail/51883.html) 的封装
 
+## 运行模式
+
+<a href="#单服务模式">单服务模式</a> | <a href="#多服务模式">多服务模式</a>
+
+两者区别：
+
+1. 单服务模式
+
+- **优势**
+  权限要求较少
+- **劣势**
+  函数最大数量 50 个（阿里云限制）
+  服务需要在阿里云后台手动创建（因为没有权限）
+
+2. 多服务模式
+
+- **优势**
+  函数最大数量 1w+（总函数包大小 300 G，阿里云限制）
+  自动管理服务创建
+- **劣势**
+  权限要求较多
+
+### 单服务模式
+
+#### 使用步骤
+
+1. 在 [阿里云创建服务](https://fcnext.console.aliyun.com/cn-shenzhen/services) (如需获取脚本执行日志请在创建时启用日志功能)
+2. 进入服务详情, 复制必要信息待用 (点击字段右侧有复制按钮)
+   - 基础信息-地域
+   - 日志配置-日志项目
+   - 日志配置-日志仓库
+   - 点击 日志配置-日志项目 链接, 查看日志项目所属地域是否与服务一致，如不一致请记录待用，一致可忽略
+3. 实例化 scriptbowl
+
+```typescript
+const scriptbowl = new ScriptBowl({
+  accountId: '<AccountId>',
+  accessKeyId: '<AccessKeyID>',
+  accessKeySecret: '<AccessKeySecret>',
+  region: '<地区>',
+  serviceName: '<服务名>',
+  // 如 log region 不一致
+  // logger: {
+  //   region: '<日志地区>',
+  // },
+});
+```
+
+<a href="相关链接">相关链接</a>
+
+#### 单服务最小权限策略
+
+- RAM 用户权限策略 （无需日志功能则可去掉第一项）
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Action": ["log:Get*", "log:List*"],
+      "Resource": "acs:log:<地区>:*:project/<日志项目>/logstore/<日志仓库>",
+      "Effect": "Allow"
+    },
+    {
+      "Action": "fc:GetService",
+      "Resource": "acs:fc:<地区>:*:services/<服务名称>",
+      "Effect": "Allow"
+    },
+    {
+      "Action": "fc:*",
+      "Resource": "acs:fc:<地区>:*:services/<服务名称>/functions/*",
+      "Effect": "Allow"
+    }
+  ]
+}
+```
+
+- 云函数服务角色权限策略 （无需日志功能则可不配置）
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Action": ["log:PostLogStoreLogs"],
+      "Resource": "acs:log:<地区>:*:project/<日志项目>/logstore/<日志仓库>",
+      "Effect": "Allow"
+    }
+  ]
+}
+```
+
+### 多服务模式
+
+#### 使用步骤
+
+1. [创建日志项目与仓库](https://sls.console.aliyun.com/lognext/profile) (无需日志功能则可跳过)
+2. <a href="#多服务最小权限策略">配置权限</a>
+3. 实例化 scriptbowl
+
+```typescript
+const scriptbowl = new ScriptBowl({
+  accountId: '<AccountId>',
+  accessKeyId: '<AccessKeyID>',
+  accessKeySecret: '<AccessKeySecret>',
+  region: '<地区>',
+  serviceName: '<服务前缀名>',
+  multiServices: {
+    creation: {
+      roleName: '<角色名称>',
+      logConfig: {
+        project: '<日志项目>',
+        logstore: '<日志仓库>',
+      },
+    },
+  },
+  // 如 log region 不一致
+  logger: {
+    region: '<日志地区>',
+  },
+});
+```
+
+<a href="相关链接">相关链接</a>
+
+#### 多服务最小权限策略
+
+- RAM 用户权限策略 （无需日志功能则可去掉第一项）
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Action": ["log:Get*", "log:List*"],
+      "Resource": "acs:log:<地区>:*:project/digshare/logstore/fc-log",
+      "Effect": "Allow"
+    },
+    {
+      "Action": "fc:ListServices",
+      "Resource": "acs:fc:<地区>:*:services/*",
+      "Effect": "Allow"
+    },
+    {
+      "Action": ["fc:GetService", "fc:UpdateService", "fc:DeleteService"],
+      "Resource": "acs:fc:<地区>:*:services/<服务前缀名>*",
+      "Effect": "Allow"
+    },
+    {
+      "Action": "fc:*",
+      "Resource": "acs:fc:<地区>:*:services/<服务前缀名>*/functions/*",
+      "Effect": "Allow"
+    },
+    {
+      "Action": ["ram:PassRole"],
+      "Resource": "acs:ram::*:role/<角色名称>",
+      "Effect": "Allow"
+    }
+  ]
+}
+```
+
+- 云函数服务角色权限策略 （无需日志功能则可不配置）
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Action": ["log:PostLogStoreLogs"],
+      "Resource": "acs:log:<地区>:*:project/<日志项目>/logstore/<日志仓库>",
+      "Effect": "Allow"
+    }
+  ]
+}
+```
+
+### 相关链接
+
+- [AccountId](https://fcnext.console.aliyun.com/overview) （右侧 常用信息-主账号 ID）
+- [AccessKeyID & AccessKeySecret](https://ram.console.aliyun.com/manage/ak)
+
 ## ScriptBowl
 
 ### constructor(options: ScriptBowlOptions)
@@ -46,6 +228,8 @@ event 类型有:
 - `beforeUpdate` 脚本更新前
 
 - `beforeRemove` 脚本移除前
+
+- `afterRemove` 脚本移除后
 
 ### off(event, handler)
 
@@ -230,6 +414,8 @@ interface ScriptBowlEventContext {
 
 - nodejs12
 
+- nodejs14
+
 - python2.7
 
 - python3
@@ -239,78 +425,8 @@ interface ScriptBowlEventContext {
 - java11
 
 - php7.2
-- 自定义
 
-## 使用步骤
-
-1. 在 [阿里云创建服务](https://fcnext.console.aliyun.com/cn-shenzhen/services) (如需获取脚本执行日志请在创建时启用日志功能)
-2. 进入服务详情, 复制必要信息待用 (点击字段右侧有复制按钮)
-   1. 基础信息-地域
-   2. 日志配置-日志项目
-   3. 日志配置-日志仓库
-   4. 点击 日志配置-日志项目 链接, 查看日志项目所属地域是否与服务一致，如不一致请记录待用，一致可忽略
-3. 实例化 scriptbowl
-
-```typescript
-const scriptbowl = new ScriptBowl({
-  accountId: '<AccountId>',
-  accessKeyId: '<AccessKeyID>',
-  accessKeySecret: '<AccessKeySecret>',
-  region: '<Region>',
-  serviceName: '<ServiceName>',
-  // 如 log region 不一致
-  logger: {
-    region: '<LogRegion>',
-  },
-});
-```
-
-- [accountId](https://fcnext.console.aliyun.com/overview) （右侧 常用信息-主账号 ID）
-- [accessKeyId & accessKeySecret](https://ram.console.aliyun.com/manage/ak)
-
-## 阿里云权限
-
-建议的最小权限
-
-- RAM 用户权限策略
-
-```json
-{
-  "Version": "1",
-  "Statement": [
-    {
-      "Action": ["log:Get*", "log:List*"],
-      "Resource": "acs:log:<地区>:*:project/<日志项目>/logstore/<日志仓库>",
-      "Effect": "Allow"
-    },
-    {
-      "Action": "fc:GetService",
-      "Resource": "acs:fc:<地区>:*:services/<服务名称>",
-      "Effect": "Allow"
-    },
-    {
-      "Action": "fc:*",
-      "Resource": "acs:fc:<地区>:*:services/<服务名称>/functions/*",
-      "Effect": "Allow"
-    }
-  ]
-}
-```
-
-- 云函数服务角色权限策略
-
-```json
-{
-  "Version": "1",
-  "Statement": [
-    {
-      "Action": ["log:PostLogStoreLogs"],
-      "Resource": "acs:log:<地区>:*:project/<日志项目>/logstore/<日志仓库>",
-      "Effect": "Allow"
-    }
-  ]
-}
-```
+- 自定义 （未支持）
 
 ## License
 
