@@ -1,6 +1,6 @@
 # scriptbowl
 
-本质上是对 [阿里云-函数计算 (FC)](https://fcnext.console.aliyun.com/overview) [API](https://help.aliyun.com/document_detail/51883.html) 的封装
+本质是对 <a href="https://fcnext.console.aliyun.com/overview" target="_blank" />阿里云-函数计算 (FC)</a> 的封装 | <a href="https://help.aliyun.com/document_detail/51883.html" target="_blank">API 地址</a>
 
 ## 运行模式
 
@@ -28,11 +28,11 @@
 
 #### 使用步骤
 
-1. 在 [阿里云创建服务](https://fcnext.console.aliyun.com/cn-shenzhen/services) (如需获取脚本执行日志请在创建时启用日志功能)
+1. 在 <a href="https://fcnext.console.aliyun.com/cn-shenzhen/services" target="_blank">阿里云创建服务</a> (如需获取脚本执行日志请在创建时启用日志功能)
 2. 进入服务详情, 复制必要信息待用 (点击字段右侧有复制按钮)
-   - 基础信息-地域
-   - 日志配置-日志项目
-   - 日志配置-日志仓库
+   - 基础信息 -> 地域
+   - 日志配置 -> 日志项目
+   - 日志配置 -> 日志仓库
    - 点击 日志配置-日志项目 链接, 查看日志项目所属地域是否与服务一致，如不一致请记录待用，一致可忽略
 3. 实例化 scriptbowl
 
@@ -50,7 +50,8 @@ const scriptbowl = new ScriptBowl({
 });
 ```
 
-<a href="相关链接">相关链接</a>
+<a href="#相关链接">RAM 用户授权相关链接</a>
+<a href="#get(id)">使用文档</a>
 
 #### 单服务最小权限策略
 
@@ -125,7 +126,8 @@ const scriptbowl = new ScriptBowl({
 });
 ```
 
-<a href="相关链接">相关链接</a>
+<a href="#相关链接">RAM 用户授权相关链接</a>
+<a href="#get(id)">使用文档</a>
 
 #### 多服务最小权限策略
 
@@ -137,7 +139,7 @@ const scriptbowl = new ScriptBowl({
   "Statement": [
     {
       "Action": ["log:Get*", "log:List*"],
-      "Resource": "acs:log:<地区>:*:project/digshare/logstore/fc-log",
+      "Resource": "acs:log:<地区>:*:project/<日志项目>/logstore/<日志仓库>",
       "Effect": "Allow"
     },
     {
@@ -165,6 +167,8 @@ const scriptbowl = new ScriptBowl({
 ```
 
 - 云函数服务角色权限策略 （无需日志功能则可不配置）
+  > 角色名称在实例化 `scriptbowl` 时需传递
+  > 详见类型定义 `/src/library/service.ts#L57`
 
 ```json
 {
@@ -181,8 +185,8 @@ const scriptbowl = new ScriptBowl({
 
 ### 相关链接
 
-- [AccountId](https://fcnext.console.aliyun.com/overview) （右侧 常用信息-主账号 ID）
-- [AccessKeyID & AccessKeySecret](https://ram.console.aliyun.com/manage/ak)
+- [AccountId](https://fcnext.console.aliyun.com/overview) （右侧 常用信息 -> 主账号 ID）
+- [AccessKeyID & AccessKeySecret](https://ram.console.aliyun.com/manage/ak) （添加 RAM 用户，允许通过 API 访问并授予对应权限策略）
 
 ## ScriptBowl
 
@@ -268,9 +272,17 @@ event 类型有:
 
 ## Types
 
-### ScriptDefinition
+类型定义
 
-脚本定义内容
+- <a href="#ScriptDefinition">ScriptDefinition</a> - 脚本对应
+- <a href="#ScriptCron">ScriptCron</a> - 定时触发器
+- <a href="#ScriptCode">ScriptCode</a> - 脚本文件类型
+- <a href="#ScriptLog">ScriptLog</a> - 脚本日志
+- <a href="#ServicesManagerOptions">ServicesManagerOptions</a> - 服务管理初始化参数
+- <a href="#ScriptBowlEventContext">ScriptBowlEventContext</a> - 事件上下文
+- <a href="#ScriptRuntime">ScriptRuntime</a> - 可选执行环境
+
+### ScriptDefinition
 
 ```typescript
 interface ScriptDefinition<TMeta extends any = any> {
@@ -298,8 +310,6 @@ interface ScriptDefinition<TMeta extends any = any> {
 ```
 
 ### ScriptCron
-
-定时触发器定义格式
 
 ```typescript
 type ScriptCron =
@@ -383,12 +393,48 @@ export interface GithubScriptCode {
 
 ### ScriptLog
 
-脚本日志内容
-
 ```typescript
 interface ScriptLog {
   message: string;
   time: number;
+}
+```
+
+### ServicesManagerOptions
+
+```typescript
+interface ServicesManagerOptions {
+  /**
+   * 新增 service 时的选项
+   */
+  creation?: {
+    /**
+     * 能否访问公网, 默认 true
+     */
+    internetAccess?: boolean;
+    /**
+     * 授予函数计算所需权限的 RAM 角色名称, 如果要使用日志服务，需要指定包含对应权限的角色名称
+     */
+    roleName?: string;
+    logConfig?: {
+      /**
+       * 日志服务中 Logstore 名称
+       */
+      logstore: string;
+      /**
+       * 日志服务中 Project 名称
+       */
+      project: string;
+      /**
+       * 是否开启请求级别指标, 默认 false
+       */
+      enableRequestMetrics?: boolean;
+      /**
+       * 日志分割规则
+       */
+      logBeginRule?: string;
+    };
+  };
 }
 ```
 
@@ -407,8 +453,6 @@ interface ScriptBowlEventContext {
 ```
 
 ### ScriptRuntime
-
-创建脚本时可选择的执行环境
 
 - nodejs10
 
