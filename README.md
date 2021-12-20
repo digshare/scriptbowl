@@ -143,7 +143,10 @@ const scriptbowl = new ScriptBowl({
       "Effect": "Allow"
     },
     {
-      "Action": "fc:ListServices",
+      "Action": [
+        "fc:ListServices",
+        "fc:CreateService"
+      ],
       "Resource": "acs:fc:<地区>:*:services/*",
       "Effect": "Allow"
     },
