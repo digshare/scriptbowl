@@ -14,7 +14,7 @@ const REQUEST_SIZE = 100;
 /**
  * 阿里云对单个 services 的限制是 50, 为增加容错我们选小一点
  */
-const FUNCTION_SIZE_LIMIT = 3;
+const FUNCTION_SIZE_LIMIT = 30;
 
 interface ServiceDefinition {
   serviceName: string;
