@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "lint-prettier": "prettier --check .",
     "test": "yarn lint-prettier && yarn build && yarn lint",
-    "prerelease": "yarn test & npm version prerelease --preid=beta"
+    "prerelease": "npm version prerelease --preid=beta",
+    "prepublishOnly": "yarn build"
   },
   "dependencies": {
     "@forker/fc2": "2.2.5-types.2",
