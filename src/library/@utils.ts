@@ -48,12 +48,11 @@ export function createScriptId(serviceName: string): string {
 export function extractServiceIndexFromScript(
   scriptId: string,
 ): number | undefined {
-  let index = parseInt(
+  let index = parseHex(
     scriptId.slice(
       SCRIPT_HEAD_CHAR.length,
       SCRIPT_HEAD_CHAR.length + SERVICE_INDEX_STRING_LENGTH,
     ),
-    16,
   );
 
   return !isNaN(index) ? index : undefined;
@@ -68,7 +67,7 @@ export function extractServiceIndexFromService(
     return undefined;
   }
 
-  let index = parseInt(hexIndex, 16);
+  let index = parseHex(hexIndex);
 
   return !isNaN(index) ? index : undefined;
 }
@@ -267,4 +266,14 @@ export function buildTriggerConfig(cron: ScriptCron): TriggerConfig {
     cronExpression,
     enabled: true,
   };
+}
+
+function parseHex(hex: string): number {
+  let int = parseInt(hex, 16);
+
+  if (int.toString(16) === hex) {
+    return int;
+  }
+
+  return NaN;
 }
