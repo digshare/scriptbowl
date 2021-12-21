@@ -1,6 +1,6 @@
 {
   "name": "scriptbowl",
-  "version": "0.2.2-beta.5",
+  "version": "0.2.2-beta.6",
   "license": "MIT",
   "author": "Chengdu Mufan Technology Co., Ltd.",
   "main": "bld/library/index.js",
