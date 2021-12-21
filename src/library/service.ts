@@ -81,8 +81,6 @@ export class ServicesManager {
 
   private currentMaxIndex!: number;
 
-  private nextToken: string | undefined;
-
   /**
    * 未达到设定函数上限的 services map
    */
@@ -96,7 +94,7 @@ export class ServicesManager {
     private serviceNamePrefix: string,
     private options: ServicesManagerOptions = {},
   ) {
-    this.ready = this.list();
+    this.ready = this.initialize();
   }
 
   /**
@@ -143,41 +141,33 @@ export class ServicesManager {
     });
   }
 
-  private async list(): Promise<void> {
-    let {data} = await this.fc.listServices({
-      prefix: this.serviceNamePrefix,
-      limit: REQUEST_SIZE,
-      ...(this.nextToken
-        ? {
-            nextToken: this.nextToken,
-          }
-        : {}),
-    });
+  private async initialize(): Promise<void> {
+    let services: ServiceDefinition[] = [];
+    let nextToken: string | undefined;
 
-    let {nextToken, services} = Object(data);
+    while (true) {
+      let {data} = await this.fc.listServices({
+        prefix: this.serviceNamePrefix,
+        limit: REQUEST_SIZE,
+        ...(nextToken
+          ? {
+              nextToken,
+            }
+          : {}),
+      });
 
-    let usedList = await this.buildServiceUsedList(services);
+      let ret = Object(data);
 
-    this.nextToken = nextToken;
+      services.push(...(ret.services ?? []));
+      nextToken = ret.nextToken;
 
-    if (usedList.length) {
-      for (let used of usedList) {
-        if (used.count >= FUNCTION_SIZE_LIMIT) {
-          continue;
-        }
-
-        this.useableServicesMap.set(used.index, used);
+      if (!nextToken) {
+        break;
       }
     }
 
-    if (services.length && nextToken) {
-      // 请求下一页
-      return this.list();
-    } else {
-      this.currentMaxIndex = usedList[usedList.length - 1]?.index ?? -1;
-
-      await this.checkUseableStatus();
-    }
+    await this.countServicesInfo(services);
+    await this.checkUseableStatus();
   }
 
   /**
@@ -254,13 +244,15 @@ export class ServicesManager {
   }
 
   /**
-   * 从 Service 信息中构建使用量列表
+   * 从 Service 信息中统计使用信息
    * @param services
    */
-  private async buildServiceUsedList(
+  private async countServicesInfo(
     services: ServiceDefinition[],
-  ): Promise<ServiceUsed[]> {
-    let servicesMap = new Map<number | undefined, ServiceUsed>();
+  ): Promise<void> {
+    let maxIndex = this.currentMaxIndex;
+
+    let usedList: ServiceUsed[] = [];
 
     for (let {serviceName, description} of services) {
       let index = extractServiceIndexFromService(serviceName);
@@ -276,13 +268,25 @@ export class ServicesManager {
         count = await this.correctFunctionsCount(serviceName);
       }
 
-      servicesMap.set(index, {
+      if (count >= FUNCTION_SIZE_LIMIT) {
+        continue;
+      }
+
+      usedList.push({
         index,
         count,
       });
+
+      maxIndex = Math.max(maxIndex, index);
     }
 
-    return [...servicesMap.values()].sort((ua, ub) => ua.index - ub.index);
+    usedList = usedList.sort((ua, ub) => ua.index - ub.index);
+
+    for (let used of usedList) {
+      this.useableServicesMap.set(used.index, used);
+    }
+
+    this.currentMaxIndex = maxIndex;
   }
 
   /**
