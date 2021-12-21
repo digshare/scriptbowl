@@ -79,7 +79,7 @@ export interface ServicesManagerOptions {
 export class ServicesManager {
   ready: Promise<any>;
 
-  private currentMaxIndex!: number;
+  private currentMaxIndex = -1;
 
   /**
    * 未达到设定函数上限的 services map
