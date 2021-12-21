@@ -271,7 +271,7 @@ export function buildTriggerConfig(cron: ScriptCron): TriggerConfig {
 function parseHex(hex: string): number {
   let int = parseInt(hex, 16);
 
-  if (int.toString(16) === hex) {
+  if (hexIndex(int) === hex) {
     return int;
   }
 

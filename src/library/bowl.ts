@@ -216,55 +216,60 @@ export class ScriptBowl {
     to: number,
     reverse = false,
   ): Promise<ScriptLog[]> => {
-    return new Promise(async (resolve, reject) => {
-      let serviceName = await this.getServiceName(script);
+    return this.ready.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          let serviceName = await this.getServiceName(script);
 
-      let {logConfig} = Object((await this.fc.getService(serviceName)).data);
+          let {logConfig} = Object(
+            (await this.fc.getService(serviceName)).data,
+          );
 
-      if (!logConfig) {
-        throw Error('Service not include log config');
-      }
-
-      let options = this.options;
-      let {
-        accessKeyId = options.accessKeyId,
-        accessKeySecret = options.accessKeySecret,
-        region = options.region,
-      } = options.logger || {};
-
-      let sls = new ALY.SLS({
-        accessKeyId,
-        secretAccessKey: accessKeySecret,
-        endpoint: `http://${region}.log.aliyuncs.com`,
-        apiVersion: '2015-06-01',
-      });
-
-      let {project, logstore} = logConfig;
-
-      sls.getLogs(
-        {
-          projectName: project,
-          logStoreName: logstore,
-          from: Math.round(from / 1000),
-          to: Math.round(to / 1000),
-          topic: serviceName,
-          query: `functionName=${script}`,
-          reverse,
-        },
-        (error: unknown, data: any) => {
-          if (error) {
-            return reject(error);
+          if (!logConfig) {
+            throw Error('Service not include log config');
           }
 
-          resolve(
-            Object.values(data.body).map(({message, __time__}: any) => ({
-              message,
-              time: __time__ * 1000,
-            })),
+          let options = this.options;
+          let {
+            accessKeyId = options.accessKeyId,
+            accessKeySecret = options.accessKeySecret,
+            region = options.region,
+          } = options.logger || {};
+
+          let sls = new ALY.SLS({
+            accessKeyId,
+            secretAccessKey: accessKeySecret,
+            endpoint: `http://${region}.log.aliyuncs.com`,
+            apiVersion: '2015-06-01',
+          });
+
+          let {project, logstore} = logConfig;
+
+          sls.getLogs(
+            {
+              projectName: project,
+              logStoreName: logstore,
+              from: Math.round(from / 1000),
+              to: Math.round(to / 1000),
+              topic: serviceName,
+              query: `functionName=${script}`,
+              reverse,
+            },
+            (error: unknown, data: any) => {
+              if (error) {
+                return reject(error);
+              }
+
+              resolve(
+                Object.values(data.body).map(({message, __time__}: any) => ({
+                  message,
+                  time: __time__ * 1000,
+                })),
+              );
+            },
           );
-        },
-      );
-    });
+        }),
+    );
   };
 
   private request = <T>({
