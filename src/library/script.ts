@@ -69,7 +69,9 @@ export type ScriptCron =
       payload: any;
     };
 
-export interface ScriptDefinition<TMeta extends any = any> {
+export interface ScriptDefinition<
+  TEnv extends Record<string, string> = Record<string, string>,
+> {
   runtime: ScriptRuntime;
   /**
    * 入口函数, index.main
@@ -89,7 +91,10 @@ export interface ScriptDefinition<TMeta extends any = any> {
    */
   timeout?: number;
   disable?: boolean;
-  meta?: TMeta;
+  /**
+   * 添加到函数的环境变量
+   */
+  env?: TEnv;
 }
 
 export interface ScriptLog {

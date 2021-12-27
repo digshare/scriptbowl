@@ -17,10 +17,10 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
-"@forker/fc2@2.2.5-types.2":
-  version "2.2.5-types.2"
-  resolved "https://registry.yarnpkg.com/@forker/fc2/-/fc2-2.2.5-types.2.tgz#3230b5825ba2152d12552b908d2e702ed887e6da"
-  integrity sha512-cq6HLy1jWAiVSQV0pfU3vlHNOxZNXYoihs+oLQEr0GhVR2bELj2TS+G/zBqBN/szqhA+fuFenrr8n5BQ2Sh+9Q==
+"@forker/fc2@2.2.5-types.3":
+  version "2.2.5-types.3"
+  resolved "https://registry.yarnpkg.com/@forker/fc2/-/fc2-2.2.5-types.3.tgz#7bf37eb7efad4856c3b324ea059183167bdb6bb7"
+  integrity sha512-9cGTj29MoFTYfjL0vM0WIKpuJ5dV0nZHqyb0I66f76jfc9e3yBMyQTJZ8momjA8ioneFncyuorzXb++ZK9pyMQ==
   dependencies:
     "@types/debug" "^4.1.7"
     "@types/node" "^16.10.3"

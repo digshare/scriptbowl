@@ -13,7 +13,7 @@ export async function create(
     cron,
     timeout,
     disable = false,
-    meta,
+    env,
   }: {
     runtime: ScriptRuntime;
     entrance: string;
@@ -21,7 +21,7 @@ export async function create(
     cron?: ScriptCron;
     timeout?: number;
     disable?: boolean;
-    meta?: any;
+    env?: Record<string, string>;
   },
 ): Promise<string> {
   let serviceName = this.serviceName;
@@ -33,13 +33,13 @@ export async function create(
     description: JSON.stringify({
       cron,
       disable,
-      meta,
     }),
     code: {
       zipFile: content,
     },
     runtime,
     timeout,
+    environmentVariables: env,
   });
 
   if (!disable) {

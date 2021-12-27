@@ -16,7 +16,7 @@
     "prepublishOnly": "yarn build"
   },
   "dependencies": {
-    "@forker/fc2": "2.2.5-types.2",
+    "@forker/fc2": "2.2.5-types.3",
     "@types/node": "^16.10.3",
     "@types/node-fetch": "^2.5.12",
     "aliyun-sdk": "^1.12.3",

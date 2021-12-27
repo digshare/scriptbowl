@@ -285,7 +285,9 @@ event 类型有:
 ### ScriptDefinition
 
 ```typescript
-interface ScriptDefinition<TMeta extends any = any> {
+interface ScriptDefinition<
+  TEnv extends Record<string, string> = Record<string, string>,
+> {
   runtime: ScriptRuntime;
   /**
    * 入口函数, index.main
@@ -305,7 +307,7 @@ interface ScriptDefinition<TMeta extends any = any> {
    */
   timeout?: number;
   disable?: boolean;
-  meta?: TMeta;
+  env?: TEnv;
 }
 ```
 

@@ -13,7 +13,7 @@ export async function update(
     cron,
     timeout,
     disable: disableValue,
-    meta,
+    env,
   }: {
     runtime?: ScriptRuntime;
     entrance?: string;
@@ -21,7 +21,7 @@ export async function update(
     cron?: ScriptCron;
     timeout?: number;
     disable?: boolean;
-    meta?: any;
+    env?: Record<string, string>;
   },
 ): Promise<boolean> {
   let serviceName = this.serviceName;
@@ -56,11 +56,6 @@ export async function update(
       : {}),
     description: JSON.stringify({
       ...definition,
-      ...(meta
-        ? {
-            meta,
-          }
-        : {}),
       ...(cron
         ? {
             cron,
@@ -72,6 +67,11 @@ export async function update(
           }
         : {}),
     }),
+    ...(env !== undefined
+      ? {
+          environmentVariables: env,
+        }
+      : {}),
   });
 
   let disableChanged =
