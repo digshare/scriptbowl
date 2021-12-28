@@ -134,14 +134,11 @@ export class Script {
       params,
     });
 
-    let {entrance, code, cron, timeout, disable} = params;
+    let {code, ...definition} = params;
 
     return this._update('update', {
-      entrance,
+      ...definition,
       content: code && (await this._update('zipCode', code)),
-      cron,
-      timeout,
-      disable,
     });
   }
 
