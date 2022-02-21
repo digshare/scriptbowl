@@ -7,11 +7,13 @@ export async function getLogs(
     from,
     to,
     reverse,
+    offset,
   }: {
     from: number;
     to: number;
-    reverse?: boolean;
+    reverse: boolean;
+    offset: number;
   },
 ): Promise<ScriptLog[]> {
-  return this.logger.getLogs(this.script!, from, to, reverse);
+  return this.logger.getLogs(this.script!, {from, to, reverse, offset});
 }

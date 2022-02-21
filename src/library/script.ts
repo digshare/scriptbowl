@@ -172,10 +172,17 @@ export class Script {
 
   async getLogs(
     from: number,
-    to: number = Date.now(),
-    reverse = false,
+    {
+      to = Date.now(),
+      reverse = false,
+      offset = 0,
+    }: {
+      to?: number;
+      reverse?: boolean;
+      offset?: number;
+    } = {},
   ): Promise<ScriptLog[]> {
-    return this._update('getLogs', {from, to, reverse});
+    return this._update('getLogs', {from, to, reverse, offset});
   }
 
   private async _update<T>(type: string, data?: any): Promise<T> {

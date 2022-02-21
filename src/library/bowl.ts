@@ -41,11 +41,22 @@ export interface ScriptBowlOptions extends Omit<ClientConfig, 'accessKeyID'> {
 }
 
 export interface ScriptLogger {
+  /**
+   * 每次最多返回 100 条日志，可通过 offset 偏移量获取更多日志
+   * @param from 开始时间戳
+   * @param to 结束时间戳
+   * @param reverse 是否倒序
+   * @param offset 偏移量
+   * @returns 日志列表
+   */
   getLogs(
     script: string,
-    from: number,
-    to: number,
-    reverse?: boolean,
+    options: {
+      from: number;
+      to: number;
+      reverse: boolean;
+      offset: number;
+    },
   ): Promise<ScriptLog[]>;
 }
 
@@ -212,9 +223,17 @@ export class ScriptBowl {
 
   private getLogs = (
     script: string,
-    from: number,
-    to: number,
-    reverse = false,
+    {
+      from,
+      to,
+      reverse,
+      offset,
+    }: {
+      from: number;
+      to: number;
+      reverse: boolean;
+      offset: number;
+    },
   ): Promise<ScriptLog[]> => {
     return this.ready.then(
       () =>
@@ -253,6 +272,7 @@ export class ScriptBowl {
               to: Math.round(to / 1000),
               topic: serviceName,
               query: `functionName=${script}`,
+              offset,
               reverse,
             },
             (error: unknown, data: any) => {

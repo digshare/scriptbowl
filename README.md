@@ -263,12 +263,14 @@ event 类型有:
 
 移除脚本
 
-### getLogs(from, to?)
+### getLogs(from, options?: {to?, reverse?, offset?})
 
 获取脚本执行日志, 如获取最近一分钟的日志 `script.getLogs(Date.now - 60 * 1000)`
 
 - from 起始时间
 - to 截至时间，默认 `Date.now()`
+- reverse 倒序查询
+- offset 偏移量
 
 ## Types
 
