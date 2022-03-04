@@ -78,22 +78,27 @@ export async function update(
     disableValue !== undefined && disableValue !== definition.disable;
 
   if (
-    cron &&
     !isSameScriptCron(cron, definition.cron) &&
+    // 禁用的设置没有变
     !disableChanged &&
+    // 且没被禁用
     !definition.disable
   ) {
-    try {
-      // 尝试更新,更新失败就创建
-      await this.fc.updateTrigger(serviceName, scriptId, scriptId, {
-        triggerConfig: buildTriggerConfig(cron),
-      });
-    } catch (error) {
-      await this.fc.createTrigger(serviceName, scriptId, {
-        triggerName: scriptId,
-        triggerType: 'timer',
-        triggerConfig: buildTriggerConfig(cron),
-      });
+    if (cron) {
+      try {
+        // 尝试更新,更新失败就创建
+        await this.fc.updateTrigger(serviceName, scriptId, scriptId, {
+          triggerConfig: buildTriggerConfig(cron),
+        });
+      } catch (error) {
+        await this.fc.createTrigger(serviceName, scriptId, {
+          triggerName: scriptId,
+          triggerType: 'timer',
+          triggerConfig: buildTriggerConfig(cron),
+        });
+      }
+    } else {
+      await this.fc.deleteTrigger(serviceName, scriptId, scriptId);
     }
   }
 

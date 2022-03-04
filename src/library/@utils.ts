@@ -228,11 +228,11 @@ export async function zipDirectory({
 }
 
 export function isSameScriptCron(
-  cronA: ScriptCron,
-  cronB: ScriptCron,
+  cronA: ScriptCron | undefined,
+  cronB: ScriptCron | undefined,
 ): boolean {
   try {
-    if (typeof cronA === 'string') {
+    if (typeof cronA === 'string' || typeof cronA === 'undefined') {
       return cronA === cronB;
     } else {
       return (
