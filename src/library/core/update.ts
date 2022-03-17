@@ -56,7 +56,7 @@ export async function update(
       : {}),
     description: JSON.stringify({
       ...definition,
-      ...(cron
+      ...(cron !== undefined
         ? {
             cron,
           }
@@ -84,6 +84,7 @@ export async function update(
     // 且没被禁用
     !definition.disable
   ) {
+    // 空字符串也表示停用 timer 触发器
     if (cron) {
       try {
         // 尝试更新,更新失败就创建
@@ -98,7 +99,9 @@ export async function update(
         });
       }
     } else {
-      await this.fc.deleteTrigger(serviceName, scriptId, scriptId);
+      try {
+        await this.fc.deleteTrigger(serviceName, scriptId, scriptId);
+      } catch (error) {}
     }
   }
 
