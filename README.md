@@ -251,6 +251,10 @@ event 类型有:
 
 执行脚本
 
+### invoke(payload)
+
+执行脚本并返回最后 4kb 日志
+
 ### enable()
 
 启用脚本

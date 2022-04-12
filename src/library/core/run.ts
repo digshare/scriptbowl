@@ -3,7 +3,13 @@ import {payloadToString} from '../@utils';
 
 export async function run(
   this: ScriptBowlEventContext,
-  payload?: any,
+  {
+    payload,
+    returnLogs,
+  }: {
+    payload?: any;
+    returnLogs?: boolean;
+  },
 ): Promise<any> {
   let serviceName = this.serviceName;
   let script = this.script!;
@@ -27,12 +33,31 @@ export async function run(
        * 为了使用统一，我们这也包一层
        */
       Buffer.from(payloadToString({payload: payloadToString(payload)}), 'utf8'),
+      {
+        ...(returnLogs
+          ? {
+              'X-Fc-Log-Type': 'Tail',
+            }
+          : {}),
+      },
     )
     .then(res =>
       Promise.all(
         this.ee
           .listeners('afterExecuted')
           .map(listener => listener.call(this, res.data)),
-      ).then(() => res.data),
+      ).then(() => {
+        if (!returnLogs) {
+          return res.data;
+        }
+
+        return {
+          data: res.data,
+          logs: Buffer.from(
+            (res.headers['x-fc-log-result'] as string) ?? '',
+            'base64',
+          ).toString('utf8'),
+        };
+      }),
     );
 }

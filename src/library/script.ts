@@ -143,7 +143,17 @@ export class Script {
   }
 
   async run<TReturn>(payload?: any): Promise<TReturn> {
-    return this._update('run', payload);
+    return this._update('run', {payload});
+  }
+
+  async invoke<TReturn>(payload?: any): Promise<{
+    data: TReturn;
+    logs: string;
+  }> {
+    return this._update('run', {
+      payload,
+      returnLogs: true,
+    });
   }
 
   async enable(): Promise<boolean> {
